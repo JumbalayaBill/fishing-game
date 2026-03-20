@@ -114,13 +114,14 @@ body {
 }
 
 .title-logo {
-    font-size: 56px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
 }
-.title-arts { color: var(--text); }
-.title-fiske { color: var(--accent); }
+.logo-img {
+    width: 280px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
 
 .title-subtitle {
     font-size: 22px;
@@ -382,6 +383,20 @@ body {
     right: -10px;
     font-size: 40px;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.catch-medal-info {
+    margin: 8px 0;
+}
+.medal-badge {
+    background: rgba(255, 222, 23, 0.15);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: inline-block;
 }
 
 .catch-card .btn { margin-top: 16px; }

@@ -1,26 +1,35 @@
-# ArtsFiske: Specimen Hunter
+# ArtsFisker
 
-A browser-based fishing game inspired by [artsfiske.com](https://artsfiske.com) - Norway's specimen fishing community.
+Et nettleserbasert fiskespill inspirert av [artsfiske.com](https://artsfiske.com) - Norges artsfiske-fellesskap.
 
-## How to Play
+## Slik spiller du
 
-Open `index.html` in any modern browser. No build step required.
+Åpne `index.html` i en moderne nettleser. Ingen installasjon nødvendig.
 
-### Controls
-- **SPACE** — Cast line, set power, hook fish
-- **Hold SPACE** — Reel in during fish fight
-- **Touch** — Full touch support for mobile
+### Kontroller
+- **MELLOMROM** — Kast ut, sett kraft, krok fisk
+- **Hold MELLOMROM** — Dra inn under fiskekamp
+- **Touch** — Full touch-støtte for mobil
 
-### Gameplay
-1. **Choose your setup** — Pick a location, bait, and time of day
-2. **Cast your line** — Time the power meter for optimal distance
-3. **Wait for a bite** — Different bait attracts different species
-4. **Fight the fish** — Hold SPACE to reel in while keeping tension in the green zone
-5. **Build your collection** — Catch all 34 Norwegian species across 4 locations
+### Spillgang
+1. **Velg oppsett** — Velg sted, agn og tid på døgnet
+2. **Kast ut** — Tidsinnstill kraftmåleren for optimal kastlengde
+3. **Vent på napp** — Ulikt agn tiltrekker ulike arter
+4. **Kjempe mot fisken** — Hold MELLOMROM for å dra inn mens du holder spenningen i grønn sone
+5. **Bygg samlingen din** — Fang alle 34 norske arter over 4 steder
 
-### Strategy
-- Each bait has different effectiveness per location type (freshwater/saltwater)
-- Time of day affects bite rates — dawn and dusk are peak times
-- Cast distance influences which species you can reach
-- Bigger fish fight harder — manage your line tension carefully
-- Earn coins to unlock new locations, baits, and rod upgrades
+### Strategi
+- Hvert agn har ulik effektivitet per stedstype (ferskvann/saltvann)
+- Tid på døgnet påvirker bitefrekvens — daggry og skumring er best
+- Kastlengde påvirker hvilke arter du kan nå
+- Større fisk kjemper hardere — håndter snørspenningen forsiktig
+- Tjen mynter for å låse opp nye steder, agn og stangoppgraderinger
+
+### Funksjoner
+- 34 ekte norske fiskearter med ekte medaljegrenser fra artsfiske.com
+- 4 steder: Fjellvatnet, Lakseelva, Vestfjorden, Nordsjøen
+- 6 agntyper med ulike tiltrekningsprofiler
+- Ferdighetsbasert kasting og fiskekamp-mekanikk
+- Artssamling med medaljer (gull/sølv/bronse)
+- Vedvarende fremgang med toppliste (localStorage)
+- Mobil touch-støtte

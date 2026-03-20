@@ -1,5 +1,5 @@
 // ============================================================
-// ArtsFiske: Specimen Hunter - Game Engine
+// ArtsFisker - Spillmotor
 // ============================================================
 
 // --- Canvas roundRect polyfill ---
@@ -25,15 +25,14 @@ const Save = {
     data: null,
     load() {
         try {
-            const raw = localStorage.getItem('artsfiske_specimen_hunter');
+            const raw = localStorage.getItem('artsfisker_save');
             this.data = raw ? { ...DEFAULT_SAVE, ...JSON.parse(raw) } : { ...DEFAULT_SAVE };
         } catch { this.data = { ...DEFAULT_SAVE }; }
-        // Ensure nested objects
         if (!this.data.highscores) this.data.highscores = { bestDayPoints: [], bestDaySpecies: [], biggestCatch: [] };
         if (!this.data.caughtSpecies) this.data.caughtSpecies = {};
     },
     save() {
-        localStorage.setItem('artsfiske_specimen_hunter', JSON.stringify(this.data));
+        localStorage.setItem('artsfisker_save', JSON.stringify(this.data));
     }
 };
 
@@ -66,7 +65,7 @@ const UI = {
     },
 
     renderSetup() {
-        // Locations
+        // Steder
         const locGrid = document.getElementById('location-options');
         locGrid.innerHTML = LOCATIONS.map(loc => {
             const unlocked = Save.data.unlockedLocations.includes(loc.id);
@@ -76,12 +75,12 @@ const UI = {
                 onclick="UI.selectOption('location', '${loc.id}', ${unlocked}, ${!unlocked && canUnlock})">
                 <div class="option-icon">${loc.icon}</div>
                 <div class="option-name">${loc.name}</div>
-                <div class="option-sub">${loc.nameEn}</div>
-                ${!unlocked ? `<div class="option-cost">${loc.unlockCost} coins + ${loc.unlockSpecies} species</div>` : ''}
+                <div class="option-sub">${loc.type === 'fw' ? 'Ferskvann' : 'Saltvann'}</div>
+                ${!unlocked ? `<div class="option-cost">${loc.unlockCost} mynter + ${loc.unlockSpecies} arter</div>` : ''}
             </div>`;
         }).join('');
 
-        // Baits
+        // Agn
         const baitGrid = document.getElementById('bait-options');
         baitGrid.innerHTML = BAITS.map(b => {
             const unlocked = Save.data.unlockedBaits.includes(b.id);
@@ -90,19 +89,19 @@ const UI = {
                 onclick="UI.selectOption('bait', '${b.id}', ${unlocked}, ${canBuy})">
                 <div class="option-icon">${b.icon}</div>
                 <div class="option-name">${b.name}</div>
-                <div class="option-sub">${b.nameEn}</div>
-                ${!unlocked ? `<div class="option-cost">${b.cost} coins</div>` : ''}
+                <div class="option-sub">${b.description}</div>
+                ${!unlocked ? `<div class="option-cost">${b.cost} mynter</div>` : ''}
             </div>`;
         }).join('');
 
-        // Time
+        // Tid
         const timeGrid = document.getElementById('time-options');
         timeGrid.innerHTML = TIME_OF_DAY.map(t => {
             return `<div class="option-card" data-type="time" data-id="${t.id}"
                 onclick="UI.selectOption('time', '${t.id}', true, false)">
                 <div class="option-icon">${t.icon}</div>
                 <div class="option-name">${t.name}</div>
-                <div class="option-sub">${t.nameEn}</div>
+                <div class="option-sub">${t.description}</div>
             </div>`;
         }).join('');
 
@@ -166,13 +165,12 @@ const UI = {
         if (!loc || !bait || !time) return;
 
         const fishHere = FISH_SPECIES.filter(f => f.locations.includes(loc.id));
-        const attracted = fishHere.filter(f => bait.attracts.includes(f.id));
         const eff = bait.effectiveness[loc.type] * 100;
 
         document.getElementById('setup-info-text').innerHTML =
             `<strong>${loc.name}</strong> — ${loc.description}<br>` +
-            `<span style="color:var(--text-muted)">${fishHere.length} species available. ` +
-            `Bait effectiveness: <span style="color:${eff > 60 ? 'var(--success)' : eff > 30 ? 'var(--warning)' : 'var(--danger)'}">${eff.toFixed(0)}%</span>. ` +
+            `<span style="color:var(--text-muted)">${fishHere.length} arter tilgjengelig. ` +
+            `Agn-effektivitet: <span style="color:${eff > 60 ? 'var(--success)' : eff > 30 ? 'var(--warning)' : 'var(--danger)'}">${eff.toFixed(0)}%</span>. ` +
             `${time.description}</span>`;
     },
 
@@ -183,9 +181,9 @@ const UI = {
         const total = FISH_SPECIES.length;
 
         document.getElementById('collection-stats').innerHTML =
-            `<strong>${caughtCount}</strong> / ${total} species discovered &nbsp;|&nbsp; ` +
-            `Total catches: <strong>${Save.data.totalCatches}</strong> &nbsp;|&nbsp; ` +
-            `Total points: <strong>${Save.data.totalPoints.toFixed(2)}</strong>`;
+            `<strong>${caughtCount}</strong> / ${total} arter oppdaget &nbsp;|&nbsp; ` +
+            `Totalt fanget: <strong>${Save.data.totalCatches}</strong> &nbsp;|&nbsp; ` +
+            `Totale poeng: <strong>${Save.data.totalPoints.toFixed(2)}</strong>`;
 
         let species = [...FISH_SPECIES];
         if (filter === 'caught') species = species.filter(f => caught[f.id]);
@@ -196,18 +194,19 @@ const UI = {
         grid.innerHTML = species.map(fish => {
             const data = caught[fish.id];
             const isCaught = !!data;
-            const medal = data ? this.getMedalEmoji(data.bestPoints) : '';
+            const medal = data ? this.getMedalForFish(fish, data.bestWeight) : '';
+            const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
 
             return `<div class="collection-card ${isCaught ? '' : 'uncaught'}">
                 <div class="fish-preview"><canvas data-fish-id="${fish.id}" width="180" height="60"></canvas></div>
                 <div class="fish-name">${isCaught ? fish.name : '???'}</div>
-                <div class="fish-name-en">${isCaught ? fish.nameEn : 'Undiscovered'}</div>
-                <div class="fish-type">${fish.type === 'fw' ? 'Freshwater' : 'Saltwater'} — ${fish.locations.map(l => LOCATIONS.find(lo => lo.id === l).name).join(', ')}</div>
+                <div class="fish-name-en">${isCaught ? (fish.type === 'fw' ? 'Ferskvann' : 'Saltvann') : 'Uoppdaget'}</div>
+                <div class="fish-type">${fish.locations.map(l => LOCATIONS.find(lo => lo.id === l).name).join(', ')}</div>
                 ${isCaught ? `
-                    <div class="fish-best">Best: <strong>${data.bestWeight.toFixed(2)} kg</strong> — <strong>${data.bestPoints.toFixed(2)} pts</strong></div>
-                    <div class="fish-count">Caught ${data.count}x. Record: ${fish.recordWeight} kg</div>
+                    <div class="fish-best">Beste: <strong>${formatW(data.bestWeight)}</strong> — <strong>${data.bestPoints.toFixed(2)} poeng</strong></div>
+                    <div class="fish-count">Fanget ${data.count}x. Rekord: ${formatW(fish.recordWeight)}</div>
                     ${medal ? `<div class="fish-medal">${medal}</div>` : ''}
-                ` : `<div class="fish-best">Record: ${fish.recordWeight} kg</div>`}
+                ` : `<div class="fish-best">Rekord: ${formatW(fish.recordWeight)}</div>`}
             </div>`;
         }).join('');
 
@@ -226,10 +225,17 @@ const UI = {
         this.renderCollection(filter);
     },
 
-    getMedalEmoji(points) {
-        if (points >= MEDALS.gold) return '🥇';
-        if (points >= MEDALS.silver) return '🥈';
-        if (points >= MEDALS.bronze) return '🥉';
+    getMedalForFish(fish, weightInGrams) {
+        if (fish.goldLimit && weightInGrams >= fish.goldLimit) return '🥇';
+        if (fish.silverLimit && weightInGrams >= fish.silverLimit) return '🥈';
+        if (fish.bronzeLimit && weightInGrams >= fish.bronzeLimit) return '🥉';
+        return '';
+    },
+
+    getMedalName(fish, weightInGrams) {
+        if (fish.goldLimit && weightInGrams >= fish.goldLimit) return 'Gull';
+        if (fish.silverLimit && weightInGrams >= fish.silverLimit) return 'Sølv';
+        if (fish.bronzeLimit && weightInGrams >= fish.bronzeLimit) return 'Bronse';
         return '';
     },
 
@@ -241,29 +247,30 @@ const UI = {
         const list = document.getElementById('highscore-list');
         const hs = Save.data.highscores;
 
+        const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
         let items = [];
         if (tab === 'points') {
             items = (hs.bestDayPoints || []).slice(0, 10).map((entry, i) => ({
                 rank: i + 1,
-                value: entry.points.toFixed(2) + ' pts',
-                label: `${entry.location} — ${entry.catches} catches`
+                value: entry.points.toFixed(2) + ' poeng',
+                label: `${entry.location} — ${entry.catches} fangster`
             }));
         } else if (tab === 'species') {
             items = (hs.bestDaySpecies || []).slice(0, 10).map((entry, i) => ({
                 rank: i + 1,
-                value: entry.species + ' species',
-                label: `${entry.location} — ${entry.catches} catches`
+                value: entry.species + ' arter',
+                label: `${entry.location} — ${entry.catches} fangster`
             }));
         } else if (tab === 'biggest') {
             items = (hs.biggestCatch || []).slice(0, 10).map((entry, i) => ({
                 rank: i + 1,
-                value: entry.weight.toFixed(2) + ' kg',
-                label: `${entry.name} (${entry.nameEn}) — ${entry.points.toFixed(2)} pts`
+                value: formatW(entry.weight),
+                label: `${entry.name} — ${entry.points.toFixed(2)} poeng`
             }));
         }
 
         if (items.length === 0) {
-            list.innerHTML = '<div class="highscore-empty">No records yet. Go fishing!</div>';
+            list.innerHTML = '<div class="highscore-empty">Ingen rekorder ennå. Dra ut og fisk!</div>';
             return;
         }
 
@@ -887,7 +894,7 @@ const Scene = {
         ctx.fillStyle = `rgba(231, 76, 60, ${alpha})`;
         ctx.font = `bold ${Math.min(w * 0.06, 48)}px sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText('BITE! Press SPACE!', w / 2, h * 0.3);
+        ctx.fillText('NAPP! Trykk MELLOMROM!', w / 2, h * 0.3);
         ctx.textAlign = 'start';
     },
 
@@ -962,18 +969,18 @@ const Scene = {
         ctx.font = '10px sans-serif';
         ctx.fillStyle = '#E74C3C';
         ctx.textAlign = 'center';
-        ctx.fillText('SNAP', meterX + meterW / 2, meterY - 8);
-        ctx.fillText('LOOSE', meterX + meterW / 2, meterY + meterH + 14);
+        ctx.fillText('RYKER', meterX + meterW / 2, meterY - 8);
+        ctx.fillText('SLAKK', meterX + meterW / 2, meterY + meterH + 14);
         ctx.textAlign = 'start';
 
-        // "TENSION" label
+        // "SPENNING" label
         ctx.save();
         ctx.translate(meterX - 12, meterY + meterH / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.font = '11px sans-serif';
         ctx.fillStyle = '#999';
         ctx.textAlign = 'center';
-        ctx.fillText('TENSION', 0, 0);
+        ctx.fillText('SPENNING', 0, 0);
         ctx.restore();
     },
 
@@ -999,7 +1006,7 @@ const Scene = {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`Reeling in... ${(progress * 100).toFixed(0)}%`, w / 2, barY + 12);
+        ctx.fillText(`Drar inn... ${(progress * 100).toFixed(0)}%`, w / 2, barY + 12);
         ctx.textAlign = 'start';
     },
 
@@ -1040,7 +1047,7 @@ const Scene = {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 13px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('CAST POWER', w / 2, barY - 10);
+        ctx.fillText('KASTKRAFT', w / 2, barY - 10);
         ctx.textAlign = 'start';
     },
 
@@ -1131,7 +1138,7 @@ const Game = {
         UI.showScreen('screen-fishing');
         Scene.init();
         this.updateHUD();
-        UI.setPrompt('Press SPACE to cast your line', true);
+        UI.setPrompt('Trykk MELLOMROM for å kaste ut', true);
         this.running = true;
         this.loop();
     },
@@ -1167,7 +1174,7 @@ const Game = {
                 if (this.rollForBite()) {
                     this.phase = 'bite';
                     this.biteTimer = 1200; // ms to react
-                    UI.setPrompt('BITE! Press SPACE now!', true);
+                    UI.setPrompt('NAPP! Trykk MELLOMROM nå!', true);
                 } else {
                     // No bite, wait more
                     this.waitTimer = 1500 + Math.random() * 2500;
@@ -1185,7 +1192,7 @@ const Game = {
                 if (this.castsLeft <= 0) {
                     this.endDay();
                 } else {
-                    UI.setPrompt('Too slow! The fish spat the hook. Press SPACE to cast again.', true);
+                    UI.setPrompt('For sent! Fisken spyttet ut kroken. Trykk MELLOMROM for å kaste igjen.', true);
                 }
             }
         }
@@ -1229,13 +1236,13 @@ const Game = {
             // Line snap — stronger rods allow higher tension
             const snapThreshold = 0.75 + (rod.lineStrength - 1) * 0.15;
             if (this.tension > snapThreshold) {
-                this.fishEscaped('Line snapped! Too much tension.');
+                this.fishEscaped('Snøret røk! For mye spenning.');
                 return;
             }
 
             // Fish escapes (too loose)
             if (this.tension < 0.08 && this.fightTime > 1000) {
-                this.fishEscaped('The fish shook the hook! Keep tension on the line.');
+                this.fishEscaped('Fisken ristet seg løs! Hold spenning på snøret.');
                 return;
             }
 
@@ -1323,7 +1330,7 @@ const Game = {
         this.fishPullTimer = 500;
         this.fishPullStrength = 0.3;
         this.fightTime = 0;
-        UI.setPrompt('Hold SPACE to reel in! Keep tension in the green zone!', true);
+        UI.setPrompt('Hold MELLOMROM for å dra inn! Hold spenningen i grønn sone!', true);
     },
 
     fishCaught() {
@@ -1375,7 +1382,7 @@ const Game = {
 
         // Update highscores - biggest catch
         Save.data.highscores.biggestCatch.push({
-            name: fish.name, nameEn: fish.nameEn, weight, points
+            name: fish.name, weight, points
         });
         Save.data.highscores.biggestCatch.sort((a, b) => b.weight - a.weight);
         Save.data.highscores.biggestCatch = Save.data.highscores.biggestCatch.slice(0, 20);
@@ -1390,26 +1397,33 @@ const Game = {
         this.castsLeft--;
         this.updateHUD();
 
-        document.getElementById('escape-title').textContent = 'The fish got away!';
+        document.getElementById('escape-title').textContent = 'Fisken slapp!';
         document.getElementById('escape-reason').textContent = reason;
         UI.showOverlay('overlay-escape');
     },
 
     showCatchResult(fish, weight, length, points, coins, isNew) {
-        // Medal
-        let medal = '';
-        if (points >= MEDALS.gold) medal = '🥇';
-        else if (points >= MEDALS.silver) medal = '🥈';
-        else if (points >= MEDALS.bronze) medal = '🥉';
+        const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
+        const medal = UI.getMedalForFish(fish, weight);
+        const medalName = UI.getMedalName(fish, weight);
 
         document.getElementById('catch-medal').textContent = medal;
         document.getElementById('catch-title').textContent =
-            fish.legendary ? 'LEGENDARY CATCH!' : isNew ? 'New Species Discovered!' : 'Nice Catch!';
-        document.getElementById('catch-species').textContent = `${fish.name} (${fish.nameEn})`;
-        document.getElementById('catch-weight').textContent = `${weight.toFixed(2)} kg`;
+            fish.legendary ? 'LEGENDARISK FANGST!' : isNew ? 'Ny art oppdaget!' : 'Fin fangst!';
+        document.getElementById('catch-species').textContent = fish.name;
+        document.getElementById('catch-weight').textContent = formatW(weight);
         document.getElementById('catch-length').textContent = `${length.toFixed(1)} cm`;
         document.getElementById('catch-points').textContent = `${points.toFixed(2)}`;
         document.getElementById('catch-coins').textContent = `+${coins}`;
+
+        // Medal info
+        const medalInfo = document.getElementById('catch-medal-info');
+        if (medalName) {
+            medalInfo.style.display = 'block';
+            medalInfo.innerHTML = `<span class="medal-badge">${medal} ${medalName}medalje!</span>`;
+        } else {
+            medalInfo.style.display = 'none';
+        }
 
         const newBadge = document.getElementById('catch-new');
         newBadge.style.display = isNew ? 'inline-block' : 'none';
@@ -1429,7 +1443,7 @@ const Game = {
         if (this.castsLeft <= 0) {
             this.endDay();
         } else {
-            UI.setPrompt('Press SPACE to cast again', true);
+            UI.setPrompt('Trykk MELLOMROM for å kaste igjen', true);
         }
     },
 
@@ -1438,7 +1452,7 @@ const Game = {
         if (this.castsLeft <= 0) {
             this.endDay();
         } else {
-            UI.setPrompt('Press SPACE to cast again', true);
+            UI.setPrompt('Trykk MELLOMROM for å kaste igjen', true);
         }
     },
 
@@ -1469,26 +1483,27 @@ const Game = {
 
         Save.save();
 
-        // Show summary
+        // Vis oppsummering
+        const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
         const statsDiv = document.getElementById('summary-stats');
         statsDiv.innerHTML = `
-            <div class="summary-stat"><div class="summary-stat-value">${this.dayCatches.length}</div><div class="summary-stat-label">Fish Caught</div></div>
-            <div class="summary-stat"><div class="summary-stat-value">${this.daySpecies.size}</div><div class="summary-stat-label">Unique Species</div></div>
-            <div class="summary-stat"><div class="summary-stat-value">${this.dayPoints.toFixed(1)}</div><div class="summary-stat-label">Total Points</div></div>
-            <div class="summary-stat"><div class="summary-stat-value">${this.dayCoins}</div><div class="summary-stat-label">Coins Earned</div></div>
+            <div class="summary-stat"><div class="summary-stat-value">${this.dayCatches.length}</div><div class="summary-stat-label">Fisk fanget</div></div>
+            <div class="summary-stat"><div class="summary-stat-value">${this.daySpecies.size}</div><div class="summary-stat-label">Unike arter</div></div>
+            <div class="summary-stat"><div class="summary-stat-value">${this.dayPoints.toFixed(1)}</div><div class="summary-stat-label">Totale poeng</div></div>
+            <div class="summary-stat"><div class="summary-stat-value">${this.dayCoins}</div><div class="summary-stat-label">Mynter tjent</div></div>
         `;
 
         const catchesDiv = document.getElementById('summary-catches');
         if (this.dayCatches.length > 0) {
-            catchesDiv.innerHTML = '<h3>Catches</h3>' + this.dayCatches.map(c => {
-                const medal = UI.getMedalEmoji(c.points);
+            catchesDiv.innerHTML = '<h3>Fangster</h3>' + this.dayCatches.map(c => {
+                const medal = UI.getMedalForFish(c.fish, c.weight);
                 return `<div class="summary-catch-item">
-                    <span>${c.fish.name} — ${c.weight.toFixed(2)} kg${c.isNew ? ' ✨' : ''}</span>
-                    <span>${c.points.toFixed(1)} pts ${medal}</span>
+                    <span>${c.fish.name} — ${formatW(c.weight)}${c.isNew ? ' ✨' : ''}</span>
+                    <span>${c.points.toFixed(1)} poeng ${medal}</span>
                 </div>`;
             }).join('');
         } else {
-            catchesDiv.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px;">No fish caught today. Try different bait or location!</p>';
+            catchesDiv.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px;">Ingen fisk fanget i dag. Prøv annet agn eller sted!</p>';
         }
 
         UI.showOverlay('overlay-summary');
@@ -1501,7 +1516,7 @@ const Game = {
         document.getElementById('hud-bait').textContent = bait ? `${bait.icon} ${bait.name}` : '';
         document.getElementById('hud-casts-left').textContent = this.castsLeft;
         document.getElementById('hud-casts-total').textContent = this.castsTotal;
-        document.getElementById('hud-coins').textContent = `${Save.data.coins} coins`;
+        document.getElementById('hud-coins').textContent = `${Save.data.coins} mynter`;
     },
 
     handleKey(e) {
@@ -1512,7 +1527,7 @@ const Game = {
             this.phase = 'casting';
             this.power = 0;
             this.powerDir = 1;
-            UI.setPrompt('Press SPACE to set cast power!', true);
+            UI.setPrompt('Trykk MELLOMROM for å sette kastkraft!', true);
         } else if (this.phase === 'casting') {
             this.castDistance = this.power;
             this.phase = 'waiting';
@@ -1523,7 +1538,7 @@ const Game = {
             const bobX = Scene.width * 0.15 + this.castDistance * Scene.width * 0.007;
             Scene.addSplash(bobX, wl);
 
-            UI.setPrompt('Waiting for a bite...', true);
+            UI.setPrompt('Venter på napp...', true);
         } else if (this.phase === 'bite') {
             this.startFight();
         }
