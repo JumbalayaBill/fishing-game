@@ -2,23 +2,175 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Species Collector: The Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtsFiske: Specimen Hunter</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <h1>🎣 Species Collector</h1>
-        <div id="ui">Score: <span id="score">0</span></div>
-        
-        <canvas id="gameCanvas"></canvas>
-        
-        <div id="instructions">Press <strong>SPACE</strong> to Cast / Hook / Reset</div>
-        
-        <div id="log-container">
-            <h3>Your Trophy Cabinet</h3>
-            <div id="log">No species caught yet...</div>
+    <!-- TITLE SCREEN -->
+    <div id="screen-title" class="screen active">
+        <div class="title-container">
+            <div class="title-logo">
+                <span class="title-arts">Arts</span><span class="title-fiske">Fiske</span>
+            </div>
+            <h2 class="title-subtitle">Specimen Hunter</h2>
+            <div class="title-fish-art">
+                <svg viewBox="0 0 120 50" class="fish-silhouette">
+                    <path d="M10,25 Q20,10 40,15 Q55,5 75,15 L95,10 Q85,25 95,40 L75,35 Q55,45 40,35 Q20,40 10,25 Z" fill="var(--accent)"/>
+                    <circle cx="72" cy="22" r="3" fill="var(--bg)"/>
+                </svg>
+            </div>
+            <button class="btn btn-primary" onclick="Game.start()">Start Fishing</button>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-collection')">My Collection</button>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-highscores')">Highscores</button>
+            <div class="title-footer">
+                <p>Inspired by <a href="https://artsfiske.com" target="_blank">artsfiske.com</a></p>
+            </div>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <!-- SETUP SCREEN -->
+    <div id="screen-setup" class="screen">
+        <div class="setup-container">
+            <h2>Prepare Your Trip</h2>
+
+            <div class="setup-section">
+                <h3>Location</h3>
+                <div class="option-grid" id="location-options"></div>
+            </div>
+
+            <div class="setup-section">
+                <h3>Bait</h3>
+                <div class="option-grid" id="bait-options"></div>
+            </div>
+
+            <div class="setup-section">
+                <h3>Time of Day</h3>
+                <div class="option-grid" id="time-options"></div>
+            </div>
+
+            <div class="setup-info">
+                <div class="info-box" id="setup-info-text">Choose your location, bait, and time to begin.</div>
+            </div>
+
+            <div class="setup-actions">
+                <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Back</button>
+                <button class="btn btn-primary" onclick="Game.beginFishing()">Cast Off!</button>
+            </div>
+
+            <div class="setup-stats">
+                <span class="stat">Coins: <strong id="player-coins">0</strong></span>
+                <span class="stat">Species: <strong id="player-species">0</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FISHING SCREEN -->
+    <div id="screen-fishing" class="screen">
+        <div class="fishing-hud">
+            <div class="hud-left">
+                <div class="hud-item" id="hud-location"></div>
+                <div class="hud-item" id="hud-bait"></div>
+            </div>
+            <div class="hud-center">
+                <div class="hud-casts">Casts: <span id="hud-casts-left">0</span> / <span id="hud-casts-total">0</span></div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item" id="hud-coins">0 coins</div>
+                <button class="btn btn-small btn-end" onclick="Game.endDay()">End Day</button>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <div class="fishing-prompt" id="fishing-prompt"></div>
+    </div>
+
+    <!-- CATCH RESULT OVERLAY -->
+    <div id="overlay-catch" class="overlay">
+        <div class="catch-card">
+            <div class="catch-badge" id="catch-medal"></div>
+            <h2 id="catch-title">You caught a fish!</h2>
+            <div class="catch-fish-display" id="catch-fish-art"></div>
+            <div class="catch-details">
+                <div class="catch-stat">
+                    <span class="catch-label">Species</span>
+                    <span class="catch-value" id="catch-species"></span>
+                </div>
+                <div class="catch-stat">
+                    <span class="catch-label">Weight</span>
+                    <span class="catch-value" id="catch-weight"></span>
+                </div>
+                <div class="catch-stat">
+                    <span class="catch-label">Length</span>
+                    <span class="catch-value" id="catch-length"></span>
+                </div>
+                <div class="catch-stat">
+                    <span class="catch-label">Specimen Points</span>
+                    <span class="catch-value highlight" id="catch-points"></span>
+                </div>
+                <div class="catch-stat">
+                    <span class="catch-label">Coins Earned</span>
+                    <span class="catch-value" id="catch-coins"></span>
+                </div>
+            </div>
+            <div class="catch-new-species" id="catch-new" style="display:none">NEW SPECIES!</div>
+            <button class="btn btn-primary" onclick="Game.closeCatchOverlay()">Continue Fishing</button>
+        </div>
+    </div>
+
+    <!-- ESCAPE OVERLAY -->
+    <div id="overlay-escape" class="overlay">
+        <div class="escape-card">
+            <h2 id="escape-title">The fish got away!</h2>
+            <p id="escape-reason"></p>
+            <button class="btn btn-primary" onclick="Game.closeEscapeOverlay()">Try Again</button>
+        </div>
+    </div>
+
+    <!-- DAY SUMMARY OVERLAY -->
+    <div id="overlay-summary" class="overlay">
+        <div class="summary-card">
+            <h2>Day Summary</h2>
+            <div class="summary-stats" id="summary-stats"></div>
+            <div class="summary-catches" id="summary-catches"></div>
+            <div class="summary-actions">
+                <button class="btn btn-primary" onclick="Game.start()">Fish Again</button>
+                <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLLECTION SCREEN -->
+    <div id="screen-collection" class="screen">
+        <div class="collection-container">
+            <h2>Species Collection</h2>
+            <div class="collection-stats" id="collection-stats"></div>
+            <div class="collection-filters">
+                <button class="btn btn-filter active" data-filter="all" onclick="UI.filterCollection('all', this)">All</button>
+                <button class="btn btn-filter" data-filter="caught" onclick="UI.filterCollection('caught', this)">Caught</button>
+                <button class="btn btn-filter" data-filter="uncaught" onclick="UI.filterCollection('uncaught', this)">Undiscovered</button>
+                <button class="btn btn-filter" data-filter="fw" onclick="UI.filterCollection('fw', this)">Freshwater</button>
+                <button class="btn btn-filter" data-filter="sw" onclick="UI.filterCollection('sw', this)">Saltwater</button>
+            </div>
+            <div class="collection-grid" id="collection-grid"></div>
+            <button class="btn btn-secondary collection-back" onclick="UI.showScreen('screen-title')">Back</button>
+        </div>
+    </div>
+
+    <!-- HIGHSCORES SCREEN -->
+    <div id="screen-highscores" class="screen">
+        <div class="highscores-container">
+            <h2>Highscores</h2>
+            <div class="highscore-tabs">
+                <button class="btn btn-filter active" onclick="UI.showHighscoreTab('points', this)">Best Day Points</button>
+                <button class="btn btn-filter" onclick="UI.showHighscoreTab('species', this)">Most Species (Day)</button>
+                <button class="btn btn-filter" onclick="UI.showHighscoreTab('biggest', this)">Biggest Catch</button>
+            </div>
+            <div class="highscore-list" id="highscore-list"></div>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Back</button>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
