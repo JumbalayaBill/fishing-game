@@ -498,22 +498,85 @@ const FISH_SPECIES = [
     }
 ];
 
-// Stangoppgraderinger
-const RODS = [
-    { id: 'basic', name: 'Begynnerstang', cost: 0, castBonus: 0, fightBonus: 0, lineStrength: 1.0 },
-    { id: 'medium', name: 'Sportsstang', cost: 300, castBonus: 0.1, fightBonus: 0.15, lineStrength: 1.3 },
-    { id: 'pro', name: 'Proffstang', cost: 800, castBonus: 0.2, fightBonus: 0.3, lineStrength: 1.6 },
-    { id: 'master', name: 'Mesterstang', cost: 2000, castBonus: 0.3, fightBonus: 0.45, lineStrength: 2.0 }
-];
+// Utstyr - fem kategorier med fire nivåer hver
+// Hvert nivå erstatter forrige (du kjøper oppgraderinger, ikke samlinger)
+const EQUIPMENT = {
+    rod: {
+        name: 'Stang',
+        icon: '🎣',
+        description: 'Bedre stang = raskere innhenting',
+        stat: 'Innhentingsfart',
+        tiers: [
+            { id: 'rod_1', name: 'Begynnerstang', cost: 0, reelSpeed: 1.0 },
+            { id: 'rod_2', name: 'Sportsstang', cost: 250, reelSpeed: 1.35 },
+            { id: 'rod_3', name: 'Proffstang', cost: 700, reelSpeed: 1.7 },
+            { id: 'rod_4', name: 'Mesterstang', cost: 1800, reelSpeed: 2.2 }
+        ]
+    },
+    line: {
+        name: 'Snøre',
+        icon: '🧵',
+        description: 'Sterkere snøre = tåler mer spenning og bredere grønn sone',
+        stat: 'Snørestyrke',
+        tiers: [
+            { id: 'line_1', name: 'Grunnsnøre', cost: 0, snapThreshold: 0.75, greenStart: 0.20, greenEnd: 0.70 },
+            { id: 'line_2', name: 'Sportsnøre', cost: 200, snapThreshold: 0.80, greenStart: 0.17, greenEnd: 0.74 },
+            { id: 'line_3', name: 'Flettesnøre', cost: 600, snapThreshold: 0.86, greenStart: 0.13, greenEnd: 0.79 },
+            { id: 'line_4', name: 'Stålsnøre', cost: 1500, snapThreshold: 0.92, greenStart: 0.08, greenEnd: 0.85 }
+        ]
+    },
+    reel: {
+        name: 'Snelle',
+        icon: '⚙️',
+        description: 'Bedre snelle = raskere avkjøling av spenning',
+        stat: 'Avkjølingsfart',
+        tiers: [
+            { id: 'reel_1', name: 'Grunnsnelle', cost: 0, tensionDecay: 1.0 },
+            { id: 'reel_2', name: 'Sportsnelle', cost: 200, tensionDecay: 1.5 },
+            { id: 'reel_3', name: 'Proffsnelle', cost: 650, tensionDecay: 2.2 },
+            { id: 'reel_4', name: 'Mestersnelle', cost: 1600, tensionDecay: 3.0 }
+        ]
+    },
+    hook: {
+        name: 'Krok',
+        icon: '🪝',
+        description: 'Bedre krok = lengre reaksjonstid og fisken sitter bedre',
+        stat: 'Krokfeste',
+        tiers: [
+            { id: 'hook_1', name: 'Grunnkrok', cost: 0, biteWindow: 1200, escapeThreshold: 0.08 },
+            { id: 'hook_2', name: 'Sportskrok', cost: 150, biteWindow: 1500, escapeThreshold: 0.06 },
+            { id: 'hook_3', name: 'Proffkrok', cost: 500, biteWindow: 1900, escapeThreshold: 0.04 },
+            { id: 'hook_4', name: 'Mesterkrok', cost: 1200, biteWindow: 2400, escapeThreshold: 0.02 }
+        ]
+    },
+    finder: {
+        name: 'Ekkolodd',
+        icon: '📡',
+        description: 'Ekkolodd øker sjansen for napp',
+        stat: 'Napp-bonus',
+        tiers: [
+            { id: 'finder_1', name: 'Ingen', cost: 0, biteBonus: 0 },
+            { id: 'finder_2', name: 'Enkelt ekkolodd', cost: 300, biteBonus: 0.2 },
+            { id: 'finder_3', name: 'Avansert ekkolodd', cost: 900, biteBonus: 0.4 },
+            { id: 'finder_4', name: 'Proff ekkolodd', cost: 2000, biteBonus: 0.65 }
+        ]
+    }
+};
 
 // Standard lagring
 const DEFAULT_SAVE = {
     coins: 0,
     totalCoins: 0,
-    caughtSpecies: {},  // id -> { bestWeight, bestLength, bestPoints, count, firstCaught, medal }
+    caughtSpecies: {},
     unlockedLocations: ['lake', 'river'],
     unlockedBaits: ['worm', 'spinner'],
-    currentRod: 'basic',
+    equipment: {
+        rod: 0,   // tier index (0 = basic)
+        line: 0,
+        reel: 0,
+        hook: 0,
+        finder: 0
+    },
     totalCatches: 0,
     totalPoints: 0,
     daysPlayed: 0,

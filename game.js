@@ -46,6 +46,7 @@ const UI = {
 
         if (id === 'screen-collection') this.renderCollection();
         if (id === 'screen-highscores') this.showHighscoreTab('points');
+        if (id === 'screen-shop') this.renderShop();
     },
 
     showOverlay(id) {
@@ -108,6 +109,18 @@ const UI = {
         // Stats
         document.getElementById('player-coins').textContent = Save.data.coins;
         document.getElementById('player-species').textContent = Object.keys(Save.data.caughtSpecies).length;
+
+        // Show current equipment summary
+        const gear = Game.getGear();
+        const eqSummary = document.getElementById('equipment-summary');
+        if (eqSummary) {
+            eqSummary.innerHTML =
+                `${EQUIPMENT.rod.icon} ${gear.rod.name} &nbsp; ` +
+                `${EQUIPMENT.line.icon} ${gear.line.name} &nbsp; ` +
+                `${EQUIPMENT.reel.icon} ${gear.reel.name} &nbsp; ` +
+                `${EQUIPMENT.hook.icon} ${gear.hook.name}` +
+                (gear.finder.biteBonus > 0 ? ` &nbsp; ${EQUIPMENT.finder.icon} ${gear.finder.name}` : '');
+        }
 
         // Auto-select defaults
         Game.selectedLocation = Save.data.unlockedLocations[0];
@@ -283,6 +296,75 @@ const UI = {
                 </div>
             </div>
         `).join('');
+    },
+
+    renderShop() {
+        const grid = document.getElementById('shop-grid');
+        const eq = Save.data.equipment || { rod: 0, line: 0, reel: 0, hook: 0, finder: 0 };
+        document.getElementById('shop-coins').textContent = Save.data.coins;
+
+        let html = '';
+        for (const [key, cat] of Object.entries(EQUIPMENT)) {
+            const currentTier = eq[key] || 0;
+            const nextTier = currentTier + 1;
+            const current = cat.tiers[currentTier];
+            const next = nextTier < cat.tiers.length ? cat.tiers[nextTier] : null;
+            const canBuy = next && Save.data.coins >= next.cost;
+            const maxed = !next;
+
+            html += `<div class="shop-category">
+                <div class="shop-cat-header">
+                    <span class="shop-cat-icon">${cat.icon}</span>
+                    <div class="shop-cat-info">
+                        <div class="shop-cat-name">${cat.name}</div>
+                        <div class="shop-cat-desc">${cat.description}</div>
+                    </div>
+                </div>
+                <div class="shop-tiers">
+                    ${cat.tiers.map((tier, i) => {
+                        const owned = i <= currentTier;
+                        const isNext = i === nextTier;
+                        const affordable = isNext && canBuy;
+                        return `<div class="shop-tier ${owned ? 'owned' : ''} ${isNext ? 'next' : ''} ${affordable ? 'affordable' : ''}">
+                            <div class="shop-tier-name">${tier.name}</div>
+                            <div class="shop-tier-stat">${this.getStatLabel(key, tier)}</div>
+                            ${owned ? '<div class="shop-tier-badge">Eid</div>' :
+                              isNext ? `<button class="btn btn-small ${affordable ? 'btn-primary' : 'btn-secondary'}"
+                                onclick="UI.buyEquipment('${key}', ${i})" ${!affordable ? 'disabled' : ''}>
+                                ${tier.cost} mynter</button>` :
+                              `<div class="shop-tier-cost">${tier.cost} mynter</div>`}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+        }
+        grid.innerHTML = html;
+    },
+
+    getStatLabel(key, tier) {
+        switch (key) {
+            case 'rod': return `Fart: ${(tier.reelSpeed * 100).toFixed(0)}%`;
+            case 'line': return `Tåler: ${(tier.snapThreshold * 100).toFixed(0)}% | Sone: ${((tier.greenEnd - tier.greenStart) * 100).toFixed(0)}%`;
+            case 'reel': return `Avkjøling: ${(tier.tensionDecay * 100).toFixed(0)}%`;
+            case 'hook': return `Vindu: ${(tier.biteWindow / 1000).toFixed(1)}s | Feste: ${((1 - tier.escapeThreshold / 0.08) * 100).toFixed(0)}%`;
+            case 'finder': return tier.biteBonus > 0 ? `Napp +${(tier.biteBonus * 100).toFixed(0)}%` : 'Ingen bonus';
+            default: return '';
+        }
+    },
+
+    buyEquipment(key, tierIndex) {
+        const cat = EQUIPMENT[key];
+        if (!cat) return;
+        const tier = cat.tiers[tierIndex];
+        if (!tier) return;
+        const eq = Save.data.equipment;
+        if (tierIndex !== (eq[key] || 0) + 1) return; // Must buy in order
+        if (Save.data.coins < tier.cost) return;
+
+        Save.data.coins -= tier.cost;
+        eq[key] = tierIndex;
+        Save.save();
+        this.renderShop();
     }
 };
 
@@ -944,9 +1026,10 @@ const Scene = {
         ctx.roundRect(meterX - 4, meterY - 4, meterW + 8, meterH + 8, 6);
         ctx.fill();
 
-        // Danger zones
-        const greenStart = 0.2;
-        const greenEnd = 0.7;
+        // Green zone from line equipment
+        const gear = Game.getGear();
+        const greenStart = gear.line.greenStart;
+        const greenEnd = gear.line.greenEnd;
 
         // Red zone (top - too much tension)
         ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
@@ -1114,8 +1197,25 @@ const Game = {
     running: false,
     animFrame: null,
 
+    // Get current equipment stats
+    getGear() {
+        const eq = Save.data.equipment || { rod: 0, line: 0, reel: 0, hook: 0, finder: 0 };
+        return {
+            rod: EQUIPMENT.rod.tiers[eq.rod] || EQUIPMENT.rod.tiers[0],
+            line: EQUIPMENT.line.tiers[eq.line] || EQUIPMENT.line.tiers[0],
+            reel: EQUIPMENT.reel.tiers[eq.reel] || EQUIPMENT.reel.tiers[0],
+            hook: EQUIPMENT.hook.tiers[eq.hook] || EQUIPMENT.hook.tiers[0],
+            finder: EQUIPMENT.finder.tiers[eq.finder] || EQUIPMENT.finder.tiers[0]
+        };
+    },
+
     start() {
         Save.load();
+        // Ensure equipment exists in save
+        if (!Save.data.equipment) {
+            Save.data.equipment = { rod: 0, line: 0, reel: 0, hook: 0, finder: 0 };
+            Save.save();
+        }
         UI.showScreen('screen-setup');
         UI.renderSetup();
     },
@@ -1173,7 +1273,8 @@ const Game = {
                 // Check if fish bites
                 if (this.rollForBite()) {
                     this.phase = 'bite';
-                    this.biteTimer = 1200; // ms to react
+                    const gear = this.getGear();
+                    this.biteTimer = gear.hook.biteWindow;
                     UI.setPrompt('NAPP! Trykk MELLOMROM nå!', true);
                 } else {
                     // No bite, wait more
@@ -1200,10 +1301,12 @@ const Game = {
         if (this.phase === 'fighting') {
             this.fightTime += 16;
 
+            // Get equipment stats
+            const gear = Game.getGear();
+
             // Fish pull behavior - varies by difficulty
             this.fishPullTimer -= 16;
             if (this.fishPullTimer <= 0) {
-                // New pull pattern
                 this.fishPullStrength = (0.3 + Math.random() * 0.7) * (this.fishDifficulty / 10);
                 this.fishPullTimer = 400 + Math.random() * 800;
 
@@ -1215,16 +1318,18 @@ const Game = {
             }
 
             // Tension dynamics
-            const rod = RODS.find(r => r.id === Save.data.currentRod) || RODS[0];
             const pullForce = this.fishPullStrength * 0.008;
-            const reelForce = this.reeling ? 0.008 * (1 + rod.fightBonus) : 0;
-            const decay = 0.004;
+            const reelForce = this.reeling ? 0.007 : 0;
+            // Decay is the "cool-down" — reel quality makes this much faster
+            const baseDecay = 0.004;
+            const decay = baseDecay * gear.reel.tensionDecay;
 
             this.tension += pullForce + reelForce - decay;
 
-            // Fish progress
+            // Fish progress — rod quality increases reel-in speed
             if (this.reeling) {
-                this.fishProgress += (0.002 + rod.fightBonus * 0.001) * (1 - this.fishPullStrength * 0.5);
+                const baseReel = 0.0025;
+                this.fishProgress += baseReel * gear.rod.reelSpeed * (1 - this.fishPullStrength * 0.4);
             } else {
                 this.fishProgress -= 0.001 * this.fishPullStrength;
             }
@@ -1233,15 +1338,14 @@ const Game = {
             this.tension = Math.max(0, Math.min(1, this.tension));
             this.fishProgress = Math.max(0, Math.min(1, this.fishProgress));
 
-            // Line snap — stronger rods allow higher tension
-            const snapThreshold = 0.75 + (rod.lineStrength - 1) * 0.15;
-            if (this.tension > snapThreshold) {
+            // Line snap — line quality raises threshold
+            if (this.tension > gear.line.snapThreshold) {
                 this.fishEscaped('Snøret røk! For mye spenning.');
                 return;
             }
 
-            // Fish escapes (too loose)
-            if (this.tension < 0.08 && this.fightTime > 1000) {
+            // Fish escapes (too loose) — hook quality lowers threshold
+            if (this.tension < gear.hook.escapeThreshold && this.fightTime > 1000) {
                 this.fishEscaped('Fisken ristet seg løs! Hold spenning på snøret.');
                 return;
             }
@@ -1261,7 +1365,8 @@ const Game = {
         if (!loc || !bait || !time) return false;
 
         // Base bite chance
-        let chance = 0.25 * bait.effectiveness[loc.type] * time.multiplier;
+        const gear = this.getGear();
+        let chance = 0.25 * bait.effectiveness[loc.type] * time.multiplier * (1 + gear.finder.biteBonus);
 
         // Cast distance bonus: sweet spot around 60-80
         if (this.castDistance > 50 && this.castDistance < 90) chance *= 1.3;

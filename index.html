@@ -55,6 +55,7 @@
 
             <div class="setup-actions">
                 <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Tilbake</button>
+                <button class="btn btn-shop" onclick="UI.showScreen('screen-shop')">🛒 Utstyrsbutikk</button>
                 <button class="btn btn-primary" onclick="Game.beginFishing()">Kast ut!</button>
             </div>
 
@@ -62,6 +63,7 @@
                 <span class="stat">Mynter: <strong id="player-coins">0</strong></span>
                 <span class="stat">Arter: <strong id="player-species">0</strong></span>
             </div>
+            <div class="equipment-summary" id="equipment-summary"></div>
         </div>
     </div>
 
@@ -168,6 +170,16 @@
             </div>
             <div class="highscore-list" id="highscore-list"></div>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Tilbake</button>
+        </div>
+    </div>
+
+    <!-- UTSTYRSBUTIKK -->
+    <div id="screen-shop" class="screen">
+        <div class="shop-container">
+            <h2>Utstyrsbutikk</h2>
+            <div class="shop-coins">Saldo: <strong id="shop-coins">0</strong> mynter</div>
+            <div class="shop-grid" id="shop-grid"></div>
+            <button class="btn btn-secondary" onclick="Game.start()">Tilbake</button>
         </div>
     </div>
 

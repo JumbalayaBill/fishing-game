@@ -242,6 +242,16 @@ body {
 }
 .setup-stats strong { color: var(--accent); }
 
+.equipment-summary {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.03);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+}
+
 /* ===== FISHING SCREEN ===== */
 #screen-fishing {
     flex-direction: column;
@@ -645,14 +655,158 @@ body {
     font-size: 14px;
 }
 
+/* ===== SHOP BUTTON ===== */
+.btn-shop {
+    background: rgba(45, 91, 163, 0.3);
+    color: var(--primary-light);
+    border: 1px solid var(--primary);
+    padding: 12px 20px;
+}
+.btn-shop:hover {
+    background: rgba(45, 91, 163, 0.5);
+}
+
+/* ===== UTSTYRSBUTIKK ===== */
+.shop-container {
+    max-width: 700px;
+    width: 100%;
+    padding: 30px;
+}
+
+#screen-shop.active { align-items: flex-start; padding-top: 40px; }
+
+.shop-container h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.shop-coins {
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+.shop-coins strong { color: var(--accent); font-size: 20px; }
+
+.shop-container > .btn-secondary {
+    display: block;
+    margin: 16px auto 0;
+}
+
+.shop-category {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 14px;
+    border: 1px solid #333;
+}
+
+.shop-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.shop-cat-icon {
+    font-size: 28px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius);
+}
+
+.shop-cat-name {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.shop-cat-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.shop-tiers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.shop-tier {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.shop-tier.owned {
+    border-color: var(--success);
+    background: rgba(39, 174, 96, 0.08);
+}
+
+.shop-tier.next {
+    border-color: #555;
+}
+
+.shop-tier.next.affordable {
+    border-color: var(--accent);
+    background: rgba(255, 222, 23, 0.05);
+}
+
+.shop-tier-name {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shop-tier-stat {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.shop-tier-badge {
+    font-size: 11px;
+    color: var(--success);
+    font-weight: 600;
+}
+
+.shop-tier-cost {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.shop-tier .btn {
+    font-size: 11px;
+    padding: 4px 8px;
+    width: 100%;
+}
+.shop-tier .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
-    .title-logo { font-size: 40px; }
     .title-subtitle { font-size: 16px; letter-spacing: 2px; }
+    .logo-img { width: 200px; }
     .option-grid { grid-template-columns: repeat(2, 1fr); }
     .collection-grid { grid-template-columns: repeat(2, 1fr); }
     .summary-stats { grid-template-columns: 1fr; }
     .catch-card, .escape-card, .summary-card { padding: 20px; }
     .fishing-hud { font-size: 12px; }
-    .setup-container, .collection-container, .highscores-container { padding: 16px; }
+    .setup-container, .collection-container, .highscores-container, .shop-container { padding: 16px; }
+    .shop-tiers { grid-template-columns: repeat(2, 1fr); }
+    .setup-actions { flex-wrap: wrap; }
 }
