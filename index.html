@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Colleague Dodger</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="UTF-8">
+    <title>Species Collector: The Game</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+        <h1>🎣 Species Collector</h1>
         <div id="ui">Score: <span id="score">0</span></div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="instructions">Press <strong>SPACE</strong> to Cast / Hook / Reset</div>
+        
+        <div id="log-container">
+            <h3>Your Trophy Cabinet</h3>
+            <div id="log">No species caught yet...</div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
