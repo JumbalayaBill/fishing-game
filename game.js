@@ -30,9 +30,310 @@ const Save = {
         } catch { this.data = { ...DEFAULT_SAVE }; }
         if (!this.data.highscores) this.data.highscores = { bestDayPoints: [], bestDaySpecies: [], biggestCatch: [] };
         if (!this.data.caughtSpecies) this.data.caughtSpecies = {};
+        // Migrate new fields for existing saves
+        if (this.data.totalWeight === undefined) this.data.totalWeight = 0;
+        if (!this.data.locationHistory) this.data.locationHistory = {};
+        if (this.data.soundEnabled === undefined) this.data.soundEnabled = true;
+        if (this.data.dailyChallengeCompleted === undefined) this.data.dailyChallengeCompleted = null;
     },
     save() {
         localStorage.setItem('artsfisker_save', JSON.stringify(this.data));
+    }
+};
+
+// --- Sound Effects (Web Audio API) ---
+const SFX = {
+    ctx: null,
+    enabled: true,
+    initialized: false,
+
+    init() {
+        if (this.initialized) return;
+        try {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.initialized = true;
+            this.enabled = Save.data.soundEnabled;
+        } catch (e) { /* no audio support */ }
+    },
+
+    toggle() {
+        this.enabled = !this.enabled;
+        Save.data.soundEnabled = this.enabled;
+        Save.save();
+        return this.enabled;
+    },
+
+    play(name) {
+        if (!this.enabled || !this.ctx) return;
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        try { this[name](); } catch (e) { /* ignore */ }
+    },
+
+    // Helper: create oscillator + gain
+    _osc(type, freq, duration, vol = 0.15) {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = vol;
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(vol, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        o.start();
+        o.stop(this.ctx.currentTime + duration);
+    },
+
+    // Helper: noise burst
+    _noise(duration, vol = 0.1) {
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+        const src = this.ctx.createBufferSource();
+        src.buffer = buffer;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(vol, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        const bp = this.ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 800;
+        bp.Q.value = 1;
+        src.connect(bp);
+        bp.connect(g);
+        g.connect(this.ctx.destination);
+        src.start();
+        src.stop(this.ctx.currentTime + duration);
+    },
+
+    splash() {
+        this._noise(0.3, 0.12);
+    },
+
+    biteBeep() {
+        const t = this.ctx.currentTime;
+        for (let i = 0; i < 3; i++) {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'square';
+            o.frequency.value = 800;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.08, t + i * 0.12);
+            g.gain.setValueAtTime(0, t + i * 0.12 + 0.06);
+            o.start(t + i * 0.12);
+            o.stop(t + i * 0.12 + 0.06);
+        }
+    },
+
+    fishCaught() {
+        const notes = [262, 330, 392, 523]; // C-E-G-C
+        const t = this.ctx.currentTime;
+        notes.forEach((freq, i) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.12, t + i * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.2);
+            o.start(t + i * 0.12);
+            o.stop(t + i * 0.12 + 0.2);
+        });
+    },
+
+    medalFanfare() {
+        const notes = [523, 659, 784, 880, 1047]; // C5-E5-G5-A5-C6
+        const t = this.ctx.currentTime;
+        notes.forEach((freq, i) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.1, t + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.25);
+            o.start(t + i * 0.15);
+            o.stop(t + i * 0.15 + 0.25);
+        });
+    },
+
+    lineSnap() {
+        this._noise(0.15, 0.15);
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(600, this.ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.3);
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+        o.start();
+        o.stop(this.ctx.currentTime + 0.3);
+    },
+
+    coinDing() {
+        this._osc('sine', 1200, 0.15, 0.1);
+    },
+
+    castWhoosh() {
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(400, this.ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.25);
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+        o.start();
+        o.stop(this.ctx.currentTime + 0.25);
+    },
+
+    sadTrombone() {
+        const notes = [233, 220, 208, 196]; // Bb-A-Ab-G
+        const t = this.ctx.currentTime;
+        notes.forEach((freq, i) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sawtooth';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.06, t + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.2);
+            o.start(t + i * 0.15);
+            o.stop(t + i * 0.15 + 0.2);
+        });
+    },
+
+    purchaseDing() {
+        const t = this.ctx.currentTime;
+        this._osc('sine', 880, 0.12, 0.1);
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = 1100;
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(0.1, t + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        o.start(t + 0.1);
+        o.stop(t + 0.25);
+    },
+
+    uiClick() {
+        this._osc('sine', 600, 0.06, 0.06);
+    }
+};
+
+// --- Daily Challenge ---
+const DailyChallenge = {
+    current: null,
+
+    seededRandom(seed) {
+        let h = 0;
+        for (let i = 0; i < seed.length; i++) {
+            h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+        }
+        return function() {
+            h = (h * 16807 + 0) % 2147483647;
+            return (h & 0x7fffffff) / 2147483647;
+        };
+    },
+
+    generate() {
+        const today = new Date().toISOString().slice(0, 10);
+        const rng = this.seededRandom(today);
+
+        const typeIdx = Math.floor(rng() * CHALLENGE_TYPES.length);
+        const type = CHALLENGE_TYPES[typeIdx];
+        let challenge = { type: type.id, date: today, progress: 0, target: 0, reward: 0, description: '' };
+
+        switch (type.id) {
+            case 'catch_at_location': {
+                const locIdx = Math.floor(rng() * LOCATIONS.length);
+                const loc = LOCATIONS[locIdx];
+                const n = 2 + Math.floor(rng() * 4);
+                challenge.target = n;
+                challenge.locationId = loc.id;
+                challenge.description = type.template.replace('{n}', n).replace('{location}', loc.name);
+                challenge.reward = type.rewardBase + n * 10;
+                break;
+            }
+            case 'gold_medal': {
+                const easyFish = FISH_SPECIES.filter(f => f.difficulty <= 6);
+                const fishIdx = Math.floor(rng() * easyFish.length);
+                const fish = easyFish[fishIdx];
+                challenge.target = 1;
+                challenge.fishId = fish.id;
+                challenge.description = type.template.replace('{species}', fish.name);
+                challenge.reward = type.rewardBase + fish.difficulty * 15;
+                break;
+            }
+            case 'total_weight': {
+                const kg = 5 + Math.floor(rng() * 20);
+                challenge.target = kg * 1000;
+                challenge.description = type.template.replace('{weight}', kg);
+                challenge.reward = type.rewardBase + kg * 5;
+                break;
+            }
+            case 'catch_n_fish': {
+                const n = 3 + Math.floor(rng() * 6);
+                challenge.target = n;
+                challenge.description = type.template.replace('{n}', n);
+                challenge.reward = type.rewardBase + n * 10;
+                break;
+            }
+        }
+
+        this.current = challenge;
+        return challenge;
+    },
+
+    isCompleted() {
+        const today = new Date().toISOString().slice(0, 10);
+        return Save.data.dailyChallengeCompleted === today;
+    },
+
+    checkProgress(dayCatches, selectedLocation) {
+        if (!this.current || this.isCompleted()) return false;
+        const c = this.current;
+
+        switch (c.type) {
+            case 'catch_at_location':
+                c.progress = dayCatches.filter(ct => ct.fish.locations.includes(c.locationId) &&
+                    selectedLocation === c.locationId).length;
+                break;
+            case 'gold_medal':
+                c.progress = dayCatches.some(ct => ct.fish.id === c.fishId &&
+                    ct.weight >= ct.fish.goldLimit) ? 1 : 0;
+                break;
+            case 'total_weight':
+                c.progress = dayCatches.reduce((sum, ct) => sum + ct.weight, 0);
+                break;
+            case 'catch_n_fish':
+                c.progress = dayCatches.length;
+                break;
+        }
+
+        if (c.progress >= c.target) {
+            this.complete();
+            return true;
+        }
+        return false;
+    },
+
+    complete() {
+        if (!this.current || this.isCompleted()) return;
+        const today = new Date().toISOString().slice(0, 10);
+        Save.data.dailyChallengeCompleted = today;
+        Save.data.coins += this.current.reward;
+        Save.data.totalCoins += this.current.reward;
+        Save.save();
     }
 };
 
@@ -47,6 +348,8 @@ const UI = {
         if (id === 'screen-collection') this.renderCollection();
         if (id === 'screen-highscores') this.showHighscoreTab('points');
         if (id === 'screen-shop') this.renderShop();
+        if (id === 'screen-stats') this.renderStats();
+        SFX.init();
     },
 
     showOverlay(id) {
@@ -210,7 +513,7 @@ const UI = {
             const medal = data ? this.getMedalForFish(fish, data.bestWeight) : '';
             const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
 
-            return `<div class="collection-card ${isCaught ? '' : 'uncaught'}">
+            return `<div class="collection-card ${isCaught ? '' : 'uncaught'}" ${isCaught ? `onclick="UI.showFishDetail('${fish.id}')" style="cursor:pointer"` : ''}>
                 <div class="fish-preview"><canvas data-fish-id="${fish.id}" width="180" height="60"></canvas></div>
                 <div class="fish-name">${isCaught ? fish.name : '???'}</div>
                 <div class="fish-name-en">${isCaught ? (fish.type === 'fw' ? 'Ferskvann' : 'Saltvann') : 'Uoppdaget'}</div>
@@ -360,6 +663,153 @@ const UI = {
         }
     },
 
+    renderStats() {
+        const s = Save.data;
+        const caughtIds = Object.keys(s.caughtSpecies);
+        const totalSpecies = FISH_SPECIES.length;
+        const avgPoints = s.totalCatches > 0 ? (s.totalPoints / s.totalCatches).toFixed(2) : '0';
+
+        // Favorite location
+        let favLoc = '—';
+        if (s.locationHistory) {
+            let maxVisits = 0;
+            for (const [locId, count] of Object.entries(s.locationHistory)) {
+                if (count > maxVisits) {
+                    maxVisits = count;
+                    const loc = LOCATIONS.find(l => l.id === locId);
+                    favLoc = loc ? loc.name : locId;
+                }
+            }
+        }
+
+        // Best catch
+        let bestCatch = '—';
+        if (s.highscores.biggestCatch && s.highscores.biggestCatch.length > 0) {
+            const bc = s.highscores.biggestCatch[0];
+            const w = bc.weight >= 1000 ? (bc.weight / 1000).toFixed(2) + ' kg' : bc.weight.toFixed(0) + ' g';
+            bestCatch = `${bc.name} (${w})`;
+        }
+
+        // Medal count
+        let gold = 0, silver = 0, bronze = 0;
+        for (const fishId of caughtIds) {
+            const fish = FISH_SPECIES.find(f => f.id === fishId);
+            const data = s.caughtSpecies[fishId];
+            if (!fish || !data) continue;
+            if (data.bestWeight >= fish.goldLimit) gold++;
+            else if (data.bestWeight >= fish.silverLimit) silver++;
+            else if (data.bestWeight >= fish.bronzeLimit) bronze++;
+        }
+
+        const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
+
+        const container = document.getElementById('stats-content');
+        container.innerHTML = `
+            <div class="stats-grid">
+                <div class="summary-stat"><div class="summary-stat-value">${s.daysPlayed}</div><div class="summary-stat-label">Dager fisket</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${s.totalCatches}</div><div class="summary-stat-label">Totale fangster</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${s.totalPoints.toFixed(1)}</div><div class="summary-stat-label">Totale poeng</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${s.totalCoins}</div><div class="summary-stat-label">Mynter tjent</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${avgPoints}</div><div class="summary-stat-label">Snitt poeng/fangst</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${favLoc}</div><div class="summary-stat-label">Favorittsted</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${bestCatch}</div><div class="summary-stat-label">Beste fangst</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${formatW(s.totalWeight)}</div><div class="summary-stat-label">Total vekt</div></div>
+                <div class="summary-stat"><div class="summary-stat-value">${caughtIds.length} / ${totalSpecies}</div><div class="summary-stat-label">Unike arter</div></div>
+                <div class="summary-stat">
+                    <div class="summary-stat-value">🥇${gold} 🥈${silver} 🥉${bronze}</div>
+                    <div class="summary-stat-label">Medaljer</div>
+                </div>
+            </div>
+        `;
+    },
+
+    showFishDetail(fishId) {
+        const fish = FISH_SPECIES.find(f => f.id === fishId);
+        if (!fish) return;
+        const data = Save.data.caughtSpecies[fishId];
+        const formatW = (g) => g >= 1000 ? (g / 1000).toFixed(2) + ' kg' : g.toFixed(0) + ' g';
+
+        // Draw large fish
+        const fishCanvas = document.getElementById('detail-fish-canvas');
+        if (fishCanvas) {
+            fishCanvas.width = 400;
+            fishCanvas.height = 200;
+            FishRenderer.draw(fishCanvas.getContext('2d'), fish, 400, 200, 1.5);
+        }
+
+        document.getElementById('detail-fish-name').textContent = fish.name;
+        document.getElementById('detail-fish-type').textContent = fish.type === 'fw' ? 'Ferskvann' : 'Saltvann';
+
+        // Stats
+        const statsEl = document.getElementById('detail-stats');
+        if (data) {
+            const firstDate = new Date(data.firstCaught).toLocaleDateString('no-NO');
+            statsEl.innerHTML = `
+                <div class="catch-stat"><span class="catch-label">Beste vekt</span><span class="catch-value">${formatW(data.bestWeight)}</span></div>
+                <div class="catch-stat"><span class="catch-label">Beste lengde</span><span class="catch-value">${data.bestLength.toFixed(1)} cm</span></div>
+                <div class="catch-stat"><span class="catch-label">Beste poeng</span><span class="catch-value highlight">${data.bestPoints.toFixed(2)}</span></div>
+                <div class="catch-stat"><span class="catch-label">Antall fanget</span><span class="catch-value">${data.count}</span></div>
+                <div class="catch-stat"><span class="catch-label">Første fangst</span><span class="catch-value">${firstDate}</span></div>
+            `;
+        } else {
+            statsEl.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:10px;">Ikke fanget ennå</p>';
+        }
+
+        // Medal progress bar
+        const medalBar = document.getElementById('detail-medal-bar');
+        const bestW = data ? data.bestWeight : 0;
+        const maxLimit = fish.goldLimit;
+        const pct = Math.min(100, (bestW / maxLimit) * 100);
+        const bronzePct = (fish.bronzeLimit / maxLimit) * 100;
+        const silverPct = (fish.silverLimit / maxLimit) * 100;
+        medalBar.innerHTML = `
+            <div class="medal-progress-bar">
+                <div class="medal-progress-fill" style="width:${pct}%"></div>
+                <div class="medal-marker bronze" style="left:${bronzePct}%">🥉</div>
+                <div class="medal-marker silver" style="left:${silverPct}%">🥈</div>
+                <div class="medal-marker gold" style="left:100%">🥇</div>
+            </div>
+            <div class="medal-limits">
+                <span>${formatW(fish.bronzeLimit)}</span>
+                <span>${formatW(fish.silverLimit)}</span>
+                <span>${formatW(fish.goldLimit)}</span>
+            </div>
+        `;
+
+        // Locations
+        const locsEl = document.getElementById('detail-locations');
+        locsEl.textContent = fish.locations.map(l => {
+            const loc = LOCATIONS.find(lo => lo.id === l);
+            return loc ? `${loc.icon} ${loc.name}` : l;
+        }).join(', ');
+
+        // Baits that attract this fish
+        const baitsEl = document.getElementById('detail-baits');
+        const attracting = BAITS.filter(b => b.attracts.includes(fish.id));
+        baitsEl.textContent = attracting.length > 0
+            ? attracting.map(b => `${b.icon} ${b.name}`).join(', ')
+            : 'Ingen spesielt agn';
+
+        // Difficulty
+        const diffEl = document.getElementById('detail-difficulty');
+        diffEl.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'diff-dot' + (i <= fish.difficulty ? ' active' : '');
+            diffEl.appendChild(dot);
+        }
+
+        UI.showOverlay('overlay-fishdetail');
+        SFX.play('uiClick');
+    },
+
+    updateSoundButton() {
+        const btn = document.getElementById('btn-sound');
+        if (btn) btn.textContent = SFX.enabled ? '🔊 Lyd på' : '🔇 Lyd av';
+        const hudBtn = document.getElementById('hud-sound');
+        if (hudBtn) hudBtn.textContent = SFX.enabled ? '🔊' : '🔇';
+    },
+
     buyEquipment(key, tierIndex) {
         const cat = EQUIPMENT[key];
         if (!cat) return;
@@ -372,6 +822,7 @@ const UI = {
         Save.data.coins -= tier.cost;
         eq[key] = tierIndex;
         Save.save();
+        SFX.play('purchaseDing');
         this.renderShop();
     }
 };
@@ -712,6 +1163,17 @@ const Scene = {
         // Water
         this.drawWater(ctx, w, h, waterLine, loc);
 
+        // Weather effects
+        const weather = Game.currentWeather;
+        if (weather) {
+            if (weather.visual === 'rain') this.drawRain(ctx, w, h);
+            else if (weather.visual === 'fog') this.drawFog(ctx, w, h, waterLine);
+            else if (weather.visual === 'storm') {
+                this.drawHeavyRain(ctx, w, h);
+                this.drawLightning(ctx, w, h);
+            }
+        }
+
         // Game elements based on state
         if (state.phase === 'idle') {
             this.drawRodIdle(ctx, w, h, waterLine);
@@ -732,6 +1194,9 @@ const Scene = {
             this.drawFishFight(ctx, w, h, waterLine, state);
             this.drawTensionMeter(ctx, w, h, state.tension, state.reeling);
             this.drawProgressBar(ctx, w, h, state.fishProgress);
+        } else if (state.phase === 'catchAnim') {
+            this.drawRodIdle(ctx, w, h, waterLine);
+            this.drawCatchAnimation(ctx, w, h, waterLine, state.catchAnimProgress, state.activeFish);
         }
 
         // Particles
@@ -1142,6 +1607,146 @@ const Scene = {
         ctx.textAlign = 'start';
     },
 
+    drawRain(ctx, w, h) {
+        ctx.strokeStyle = 'rgba(180, 200, 230, 0.4)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 80; i++) {
+            const x = (i * 13.7 + this.time * 120) % w;
+            const y = (i * 17.3 + this.time * 300) % h;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 3, y + 12);
+            ctx.stroke();
+        }
+    },
+
+    drawFog(ctx, w, h, waterLine) {
+        // Semi-transparent fog overlay, thicker near water
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, 'rgba(200, 210, 220, 0.05)');
+        grad.addColorStop(waterLine / h - 0.05, 'rgba(200, 210, 220, 0.15)');
+        grad.addColorStop(waterLine / h, 'rgba(200, 210, 220, 0.35)');
+        grad.addColorStop(1, 'rgba(200, 210, 220, 0.2)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Drifting fog wisps
+        ctx.fillStyle = 'rgba(220, 225, 230, 0.12)';
+        for (let i = 0; i < 5; i++) {
+            const x = ((this.time * 15 + i * 200) % (w + 300)) - 150;
+            const y = waterLine - 20 + i * 15 + Math.sin(this.time + i) * 8;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 120, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    },
+
+    drawHeavyRain(ctx, w, h) {
+        ctx.strokeStyle = 'rgba(180, 200, 230, 0.5)';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 160; i++) {
+            const x = (i * 7.3 + this.time * 180) % w;
+            const y = (i * 11.7 + this.time * 500) % h;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 4, y + 18);
+            ctx.stroke();
+        }
+        // Darken overlay for storm
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, w, h);
+    },
+
+    drawLightning(ctx, w, h) {
+        if (Math.random() < 0.003) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(0, 0, w, h);
+            // Lightning bolt
+            ctx.strokeStyle = 'rgba(255, 255, 200, 0.9)';
+            ctx.lineWidth = 3;
+            const x = w * 0.2 + Math.random() * w * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            let cy = 0;
+            while (cy < h * 0.4) {
+                cy += 20 + Math.random() * 30;
+                ctx.lineTo(x + (Math.random() - 0.5) * 40, cy);
+            }
+            ctx.stroke();
+        }
+    },
+
+    // Catch animation - fish jumping out of water
+    drawCatchAnimation(ctx, w, h, waterLine, t, fish) {
+        // t goes from 0 to 1 over 1500ms
+        // Parabolic arc: rise 0-0.4, peak 0.4-0.6, fall 0.6-1.0
+        let arcY;
+        const arcHeight = h * 0.3;
+        if (t < 0.4) {
+            const p = t / 0.4;
+            arcY = waterLine - arcHeight * p;
+        } else if (t < 0.6) {
+            arcY = waterLine - arcHeight;
+        } else {
+            const p = (t - 0.6) / 0.4;
+            arcY = waterLine - arcHeight * (1 - p);
+        }
+
+        const fishX = w * 0.4 + (t * 0.2) * w;
+        const fishY = arcY;
+
+        // Draw the fish using the cached canvas
+        if (this._catchFishCanvas) {
+            const fw = this._catchFishCanvas.width;
+            const fh = this._catchFishCanvas.height;
+            // Rotate fish based on arc phase
+            ctx.save();
+            ctx.translate(fishX, fishY);
+            const angle = t < 0.4 ? -0.4 : t < 0.6 ? 0 : 0.4;
+            ctx.rotate(angle);
+            ctx.drawImage(this._catchFishCanvas, -fw / 2, -fh / 2);
+            ctx.restore();
+        }
+
+        // Splash at start
+        if (t < 0.15) {
+            ctx.fillStyle = `rgba(200, 230, 255, ${0.6 * (1 - t / 0.15)})`;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const r = 20 * (t / 0.15);
+                ctx.beginPath();
+                ctx.arc(w * 0.4 + Math.cos(angle) * r, waterLine + Math.sin(angle) * r * 0.3, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Sparkle at peak
+        if (t > 0.3 && t < 0.7) {
+            const sparkle = (t - 0.3) / 0.4;
+            ctx.fillStyle = `rgba(255, 222, 23, ${0.8 * Math.sin(sparkle * Math.PI)})`;
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * Math.PI * 2 + this.time * 3;
+                const r = 25 + Math.sin(this.time * 8 + i) * 8;
+                ctx.beginPath();
+                ctx.arc(fishX + Math.cos(a) * r, fishY + Math.sin(a) * r, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Splash at landing
+        if (t > 0.85) {
+            const p = (t - 0.85) / 0.15;
+            ctx.fillStyle = `rgba(200, 230, 255, ${0.6 * (1 - p)})`;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const r = 25 * p;
+                ctx.beginPath();
+                ctx.arc(fishX + Math.cos(angle) * r, waterLine + Math.sin(angle) * r * 0.3, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    },
+
     addSplash(x, y) {
         for (let i = 0; i < 8; i++) {
             this.particles.push({
@@ -1184,8 +1789,15 @@ const Game = {
     daySpecies: new Set(),
     dayPoints: 0,
 
+    // Weather
+    currentWeather: null,
+
+    // Catch animation
+    catchAnimTimer: 0,
+    catchAnimDuration: 1500,
+
     // State machine
-    phase: 'idle',  // idle, casting, waiting, bite, fighting
+    phase: 'idle',  // idle, casting, waiting, bite, fighting, catchAnim
     power: 0,
     powerDir: 1,
     castDistance: 0,
@@ -1245,6 +1857,12 @@ const Game = {
         this.dayPoints = 0;
         this.phase = 'idle';
 
+        // Set random weather
+        this.currentWeather = WEATHER[Math.floor(Math.random() * WEATHER.length)];
+
+        // Init sound
+        SFX.init();
+
         UI.showScreen('screen-fishing');
         Scene.init();
         this.updateHUD();
@@ -1264,7 +1882,9 @@ const Game = {
             tension: this.tension,
             fishProgress: this.fishProgress,
             reeling: this.reeling,
-            fishDifficulty: this.fishDifficulty
+            fishDifficulty: this.fishDifficulty,
+            catchAnimProgress: this.catchAnimDuration > 0 ? this.catchAnimTimer / this.catchAnimDuration : 0,
+            activeFish: this.activeFish
         });
 
         this.animFrame = requestAnimationFrame(() => this.loop());
@@ -1285,6 +1905,7 @@ const Game = {
                     this.phase = 'bite';
                     const gear = this.getGear();
                     this.biteTimer = gear.hook.biteWindow;
+                    SFX.play('biteBeep');
                     UI.setPrompt('NAPP! Trykk MELLOMROM nå!', true);
                 } else {
                     // No bite, wait more
@@ -1314,11 +1935,12 @@ const Game = {
             // Get equipment stats
             const gear = Game.getGear();
 
-            // Fish pull behavior - varies by difficulty and time of day
+            // Fish pull behavior - varies by difficulty, time of day, and weather
             const timeData = TIME_OF_DAY.find(t => t.id === Game.selectedTime) || TIME_OF_DAY[0];
+            const weatherFightMod = this.currentWeather ? this.currentWeather.fightMod : 1.0;
             this.fishPullTimer -= 16;
             if (this.fishPullTimer <= 0) {
-                this.fishPullStrength = (0.3 + Math.random() * 0.7) * (this.fishDifficulty / 10) * (timeData.fightMod || 1.0);
+                this.fishPullStrength = (0.3 + Math.random() * 0.7) * (this.fishDifficulty / 10) * (timeData.fightMod || 1.0) * weatherFightMod;
                 this.fishPullTimer = 400 + Math.random() * 800;
 
                 // Aggressive fish have burst pulls
@@ -1361,10 +1983,26 @@ const Game = {
                 return;
             }
 
-            // Fish caught!
+            // Fish caught — transition to catch animation
             if (this.fishProgress >= 1) {
-                this.fishCaught();
+                this.phase = 'catchAnim';
+                this.catchAnimTimer = 0;
+                // Pre-render fish on offscreen canvas to avoid flicker
+                const offscreen = document.createElement('canvas');
+                offscreen.width = 160;
+                offscreen.height = 80;
+                FishRenderer.draw(offscreen.getContext('2d'), this.activeFish, 160, 80, 1.2);
+                Scene._catchFishCanvas = offscreen;
+                SFX.play('fishCaught');
+                UI.setPrompt('', false);
                 return;
+            }
+        }
+
+        if (this.phase === 'catchAnim') {
+            this.catchAnimTimer += 16;
+            if (this.catchAnimTimer >= this.catchAnimDuration) {
+                this.fishCaught();
             }
         }
     },
@@ -1377,7 +2015,8 @@ const Game = {
 
         // Base bite chance
         const gear = this.getGear();
-        let chance = 0.25 * bait.effectiveness[loc.type] * time.multiplier * (1 + gear.finder.biteBonus);
+        const weatherBiteMod = this.currentWeather ? this.currentWeather.biteMultiplier : 1.0;
+        let chance = 0.25 * bait.effectiveness[loc.type] * time.multiplier * (1 + gear.finder.biteBonus) * weatherBiteMod;
 
         // Cast distance bonus: sweet spot around 60-80
         if (this.castDistance > 50 && this.castDistance < 90) chance *= 1.3;
@@ -1410,6 +2049,9 @@ const Game = {
             if (this.castDistance < 30 && fish.difficulty > 6) w *= 0.3;
             if (this.castDistance > 70 && fish.rarity < 0.15) w *= 1.5;
 
+            // Weather rare bonus
+            if (this.currentWeather && fish.rarity < 0.15) w *= this.currentWeather.rareBonus;
+
             return { fish, weight: w };
         });
 
@@ -1426,7 +2068,8 @@ const Game = {
                 const timeData = TIME_OF_DAY.find(t => t.id === Game.selectedTime) || TIME_OF_DAY[0];
                 // Skewed toward smaller fish - bigger specimens are rarer
                 // sizeBonus > 1 flattens the curve, giving bigger fish on average
-                const sizeExponent = 1.5 / (timeData.sizeBonus || 1.0);
+                const weatherSizeBonus = Game.currentWeather ? Game.currentWeather.sizeBonus : 1.0;
+                const sizeExponent = 1.5 / ((timeData.sizeBonus || 1.0) * weatherSizeBonus);
                 const sizeFactor = Math.pow(sizeRoll, sizeExponent);
                 this.activeFishWeight = fish.minWeight + (fish.maxWeight - fish.minWeight) * sizeFactor;
                 this.activeFishLength = fish.minLength + (fish.maxLength - fish.minLength) * sizeFactor;
@@ -1492,12 +2135,23 @@ const Game = {
         Save.data.totalCoins += coins;
         Save.data.totalCatches++;
         Save.data.totalPoints += points;
+        Save.data.totalWeight += weight;
         Save.save();
+
+        // Check medal for sound
+        const medalName = UI.getMedalName(fish, weight);
+        if (medalName) SFX.play('medalFanfare');
+        SFX.play('coinDing');
 
         this.dayCoins += coins;
         this.dayPoints += points;
         this.daySpecies.add(fish.id);
         this.dayCatches.push({ fish, weight, length, points, coins, isNew });
+
+        // Check daily challenge
+        if (DailyChallenge.checkProgress(this.dayCatches, this.selectedLocation)) {
+            // Challenge just completed — show reward in catch overlay
+        }
 
         // Update highscores - biggest catch
         Save.data.highscores.biggestCatch.push({
@@ -1515,6 +2169,9 @@ const Game = {
         this.phase = 'idle';
         this.castsLeft--;
         this.updateHUD();
+
+        if (reason.includes('røk')) SFX.play('lineSnap');
+        else SFX.play('sadTrombone');
 
         document.getElementById('escape-title').textContent = 'Fisken slapp!';
         document.getElementById('escape-reason').textContent = reason;
@@ -1582,6 +2239,13 @@ const Game = {
 
         Save.data.daysPlayed++;
 
+        // Track location history
+        if (!Save.data.locationHistory) Save.data.locationHistory = {};
+        Save.data.locationHistory[this.selectedLocation] = (Save.data.locationHistory[this.selectedLocation] || 0) + 1;
+
+        // Final daily challenge check
+        DailyChallenge.checkProgress(this.dayCatches, this.selectedLocation);
+
         // Update highscores
         const loc = LOCATIONS.find(l => l.id === this.selectedLocation);
         Save.data.highscores.bestDayPoints.push({
@@ -1636,16 +2300,37 @@ const Game = {
         document.getElementById('hud-casts-left').textContent = this.castsLeft;
         document.getElementById('hud-casts-total').textContent = this.castsTotal;
         document.getElementById('hud-coins').textContent = `${Save.data.coins} mynter`;
+
+        // Weather
+        const weatherEl = document.getElementById('hud-weather');
+        if (weatherEl && this.currentWeather) {
+            weatherEl.textContent = `${this.currentWeather.icon} ${this.currentWeather.name}`;
+        }
+
+        // Daily challenge indicator
+        const challengeEl = document.getElementById('hud-challenge');
+        if (challengeEl && DailyChallenge.current && !DailyChallenge.isCompleted()) {
+            const c = DailyChallenge.current;
+            const pct = c.target > 0 ? Math.min(100, (c.progress / c.target) * 100).toFixed(0) : 0;
+            challengeEl.textContent = `⭐ ${pct}%`;
+            challengeEl.title = c.description;
+        } else if (challengeEl) {
+            challengeEl.textContent = DailyChallenge.isCompleted() ? '⭐ ✓' : '';
+        }
     },
 
     handleKey(e) {
         if (e.code !== 'Space') return;
         e.preventDefault();
 
+        // Ignore input during catch animation
+        if (this.phase === 'catchAnim') return;
+
         if (this.phase === 'idle' && this.castsLeft > 0) {
             this.phase = 'casting';
             this.power = 0;
             this.powerDir = 1;
+            SFX.play('castWhoosh');
             UI.setPrompt('Trykk MELLOMROM for å sette kastkraft!', true);
         } else if (this.phase === 'casting') {
             this.castDistance = this.power;
@@ -1656,6 +2341,7 @@ const Game = {
             const wl = Scene.height * 0.42;
             const bobX = Scene.width * 0.15 + this.castDistance * Scene.width * 0.007;
             Scene.addSplash(bobX, wl);
+            SFX.play('splash');
 
             UI.setPrompt('Venter på napp...', true);
         } else if (this.phase === 'bite') {
@@ -1718,3 +2404,18 @@ document.addEventListener('touchend', (e) => {
 
 // --- Init ---
 Save.load();
+DailyChallenge.generate();
+
+// Update title screen challenge banner
+(function updateChallengeBanner() {
+    const banner = document.getElementById('daily-challenge-banner');
+    if (!banner) return;
+    if (DailyChallenge.isCompleted()) {
+        banner.innerHTML = '<span class="challenge-done">⭐ Dagens utfordring fullført!</span>';
+    } else if (DailyChallenge.current) {
+        banner.innerHTML = `<span class="challenge-active">⭐ ${DailyChallenge.current.description} — Belønning: ${DailyChallenge.current.reward} mynter</span>`;
+    }
+})();
+
+// Update sound button on load
+UI.updateSoundButton();

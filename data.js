@@ -563,6 +563,22 @@ const EQUIPMENT = {
     }
 };
 
+// Værforhold
+const WEATHER = [
+    { id: 'sun',   name: 'Sol',   icon: '☀️',  biteMultiplier: 1.0, sizeBonus: 1.0, rareBonus: 1.0, fightMod: 1.0, visual: 'none' },
+    { id: 'rain',  name: 'Regn',  icon: '🌧️', biteMultiplier: 1.2, sizeBonus: 1.0, rareBonus: 1.0, fightMod: 1.0, visual: 'rain' },
+    { id: 'fog',   name: 'Tåke',  icon: '🌫️', biteMultiplier: 1.0, sizeBonus: 1.0, rareBonus: 1.5, fightMod: 1.0, visual: 'fog' },
+    { id: 'storm', name: 'Storm', icon: '⛈️',  biteMultiplier: 0.6, sizeBonus: 1.5, rareBonus: 1.0, fightMod: 1.4, visual: 'storm' }
+];
+
+// Daglige utfordringer
+const CHALLENGE_TYPES = [
+    { id: 'catch_at_location', template: 'Fang {n} fisk ved {location}', rewardBase: 80 },
+    { id: 'gold_medal',        template: 'Gullmedalje på {species}',     rewardBase: 150 },
+    { id: 'total_weight',      template: 'Fang over {weight} kg totalt', rewardBase: 100 },
+    { id: 'catch_n_fish',      template: 'Fang {n} fisk',               rewardBase: 60 }
+];
+
 // Standard lagring
 const DEFAULT_SAVE = {
     coins: 0,
@@ -580,6 +596,10 @@ const DEFAULT_SAVE = {
     totalCatches: 0,
     totalPoints: 0,
     daysPlayed: 0,
+    totalWeight: 0,
+    locationHistory: {},
+    soundEnabled: true,
+    dailyChallengeCompleted: null,
     highscores: {
         bestDayPoints: [],
         bestDaySpecies: [],

@@ -20,10 +20,13 @@
                     <circle cx="72" cy="22" r="3" fill="var(--bg)"/>
                 </svg>
             </div>
+            <div class="daily-challenge-banner" id="daily-challenge-banner"></div>
             <button class="btn btn-primary" onclick="Game.start()">Start fisketur</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-collection')">Min samling</button>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-stats')">Min profil</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-highscores')">Toppliste</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-guide')">Spillguide</button>
+            <button class="btn btn-secondary" id="btn-sound" onclick="SFX.init(); SFX.toggle(); UI.updateSoundButton();">🔊 Lyd p&aring;</button>
             <div class="title-footer">
                 <p>Inspirert av <a href="https://artsfiske.com" target="_blank">artsfiske.com</a></p>
             </div>
@@ -77,9 +80,12 @@
             </div>
             <div class="hud-center">
                 <div class="hud-casts">Kast: <span id="hud-casts-left">0</span> / <span id="hud-casts-total">0</span></div>
+                <div class="hud-item" id="hud-weather"></div>
             </div>
             <div class="hud-right">
+                <div class="hud-item" id="hud-challenge" title=""></div>
                 <div class="hud-item" id="hud-coins">0 mynter</div>
+                <button class="btn btn-small" id="hud-sound" onclick="SFX.toggle(); UI.updateSoundButton();">🔊</button>
                 <button class="btn btn-small btn-end" onclick="Game.endDay()">Avslutt dag</button>
             </div>
         </div>
@@ -181,6 +187,42 @@
             <div class="shop-coins">Saldo: <strong id="shop-coins">0</strong> mynter</div>
             <div class="shop-grid" id="shop-grid"></div>
             <button class="btn btn-secondary" onclick="Game.start()">Tilbake</button>
+        </div>
+    </div>
+
+    <!-- STATISTIKK / MIN PROFIL -->
+    <div id="screen-stats" class="screen">
+        <div class="stats-container">
+            <h2>Min profil</h2>
+            <div id="stats-content"></div>
+            <button class="btn btn-secondary stats-back" onclick="UI.showScreen('screen-title')">Tilbake</button>
+        </div>
+    </div>
+
+    <!-- FISKEDETALJ-OVERLAY -->
+    <div id="overlay-fishdetail" class="overlay">
+        <div class="fishdetail-card">
+            <canvas id="detail-fish-canvas" width="400" height="200"></canvas>
+            <h2 id="detail-fish-name"></h2>
+            <div class="detail-type" id="detail-fish-type"></div>
+            <div class="detail-section" id="detail-stats"></div>
+            <div class="detail-section">
+                <h4>Medaljeprogresjon</h4>
+                <div id="detail-medal-bar"></div>
+            </div>
+            <div class="detail-section">
+                <h4>Steder</h4>
+                <div id="detail-locations" class="detail-info"></div>
+            </div>
+            <div class="detail-section">
+                <h4>Agn som tiltrekker</h4>
+                <div id="detail-baits" class="detail-info"></div>
+            </div>
+            <div class="detail-section">
+                <h4>Vanskelighetsgrad</h4>
+                <div id="detail-difficulty" class="difficulty-dots"></div>
+            </div>
+            <button class="btn btn-primary" onclick="UI.hideOverlay('overlay-fishdetail')">Lukk</button>
         </div>
     </div>
 

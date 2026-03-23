@@ -1033,6 +1033,178 @@ body {
     margin: 0 auto;
 }
 
+/* ===== DAILY CHALLENGE BANNER ===== */
+.daily-challenge-banner {
+    width: 260px;
+    margin: 0 auto 16px;
+    padding: 10px 14px;
+    background: rgba(255, 222, 23, 0.08);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    font-size: 13px;
+    text-align: center;
+    min-height: 20px;
+}
+.challenge-active {
+    color: var(--accent);
+}
+.challenge-done {
+    color: var(--success);
+}
+
+/* ===== STATS SCREEN ===== */
+.stats-container {
+    max-width: 700px;
+    width: 100%;
+    padding: 30px;
+}
+#screen-stats.active { align-items: flex-start; padding-top: 40px; }
+
+.stats-container h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stats-back {
+    display: block;
+    margin: 0 auto;
+}
+
+/* ===== FISH DETAIL OVERLAY ===== */
+.fishdetail-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px 30px;
+    text-align: center;
+    max-width: 450px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.4s ease-out;
+}
+
+.fishdetail-card canvas {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    margin-bottom: 12px;
+}
+
+.fishdetail-card h2 {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.detail-type {
+    font-size: 13px;
+    color: var(--primary-light);
+    margin-bottom: 16px;
+}
+
+.detail-section {
+    text-align: left;
+    margin: 12px 0;
+}
+
+.detail-section h4 {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.detail-info {
+    font-size: 14px;
+    color: var(--text);
+    padding: 6px 0;
+}
+
+/* Medal progress bar */
+.medal-progress-bar {
+    position: relative;
+    height: 16px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    overflow: visible;
+    margin: 8px 0 4px;
+}
+
+.medal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bronze), var(--silver), var(--gold));
+    border-radius: 8px;
+    transition: width 0.5s ease;
+}
+
+.medal-marker {
+    position: absolute;
+    top: -8px;
+    transform: translateX(-50%);
+    font-size: 16px;
+}
+
+.medal-limits {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Difficulty dots */
+.difficulty-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.diff-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: inline-block;
+}
+
+.diff-dot.active {
+    background: var(--danger);
+}
+
+.fishdetail-card .btn {
+    margin-top: 16px;
+}
+
+/* ===== HUD EXTRAS ===== */
+#hud-weather {
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 2px;
+}
+
+#hud-challenge {
+    font-size: 13px;
+    color: var(--accent);
+    cursor: help;
+}
+
+#hud-sound {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    font-size: 16px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .title-subtitle { font-size: 16px; letter-spacing: 2px; }
@@ -1042,7 +1214,9 @@ body {
     .summary-stats { grid-template-columns: 1fr; }
     .catch-card, .escape-card, .summary-card { padding: 20px; }
     .fishing-hud { font-size: 12px; }
-    .setup-container, .collection-container, .highscores-container, .shop-container, .guide-container { padding: 16px; }
+    .setup-container, .collection-container, .highscores-container, .shop-container, .guide-container, .stats-container { padding: 16px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .fishdetail-card { padding: 16px; }
     .shop-tiers { grid-template-columns: repeat(2, 1fr); }
     .setup-actions { flex-wrap: wrap; }
     .guide-tabs { gap: 4px; }
