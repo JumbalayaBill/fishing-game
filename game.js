@@ -227,6 +227,313 @@ const SFX = {
 
     uiClick() {
         this._osc('sine', 600, 0.06, 0.06);
+    },
+
+    knotStep() {
+        this._osc('sine', 700, 0.08, 0.1);
+    },
+
+    knotComplete() {
+        const notes = [523, 659, 784, 1047]; // C5-E5-G5-C6
+        const t = this.ctx.currentTime;
+        notes.forEach((freq, i) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.1, t + i * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.2);
+            o.start(t + i * 0.1);
+            o.stop(t + i * 0.1 + 0.2);
+        });
+    }
+};
+
+// --- Knot-Tying Mini-Game ---
+const KnotGame = {
+    active: false,
+    canvas: null,
+    ctx: null,
+    step: 0,          // 0-3 (4 steps)
+    totalSteps: 4,
+    stepNames: ['Løkke', 'Omvikling', 'Tråding', 'Stramming'],
+    markerPos: 0,      // 0-1 oscillation position
+    markerDir: 1,
+    markerSpeed: 0,    // increases per step
+    sweetSpotCenter: 0.5,
+    sweetSpotWidth: 0.2,
+    stepResults: [],    // accuracy per step (0-1)
+    animFrame: null,
+    lastTime: 0,
+    showingResult: false,
+    resultTimer: 0,
+    finalScore: 0,
+
+    start() {
+        this.canvas = document.getElementById('knot-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.step = 0;
+        this.stepResults = [];
+        this.markerPos = 0;
+        this.markerDir = 1;
+        this.markerSpeed = 0.8; // base speed (units per second)
+        this.sweetSpotCenter = 0.4 + Math.random() * 0.2; // vary the target slightly
+        this.sweetSpotWidth = 0.2;
+        this.active = true;
+        this.showingResult = false;
+        this.resultTimer = 0;
+        this.finalScore = 0;
+        this.lastTime = performance.now();
+
+        document.getElementById('knot-prompt').textContent = `Steg 1/4: ${this.stepNames[0]} — Trykk MELLOMROM i grønn sone!`;
+        document.getElementById('knot-result').textContent = '';
+        document.getElementById('knot-skip').style.display = '';
+
+        UI.showOverlay('overlay-knot');
+        this.loop();
+    },
+
+    loop() {
+        if (!this.active) return;
+        const now = performance.now();
+        const dt = (now - this.lastTime) / 1000;
+        this.lastTime = now;
+
+        if (this.showingResult) {
+            this.resultTimer -= dt;
+            if (this.resultTimer <= 0) {
+                this.finish();
+                return;
+            }
+        } else {
+            this.update(dt);
+        }
+        this.render();
+        this.animFrame = requestAnimationFrame(() => this.loop());
+    },
+
+    update(dt) {
+        // Speed increases each step
+        const speed = this.markerSpeed + this.step * 0.35;
+        this.markerPos += this.markerDir * speed * dt;
+        if (this.markerPos >= 1) { this.markerPos = 1; this.markerDir = -1; }
+        if (this.markerPos <= 0) { this.markerPos = 0; this.markerDir = 1; }
+    },
+
+    handleInput() {
+        if (!this.active || this.showingResult) return;
+        if (this.step >= this.totalSteps) return;
+
+        // Calculate accuracy: distance from sweet spot center, normalized
+        const dist = Math.abs(this.markerPos - this.sweetSpotCenter);
+        const halfWidth = this.sweetSpotWidth / 2;
+        let accuracy;
+        if (dist <= halfWidth) {
+            accuracy = 1 - (dist / halfWidth) * 0.3; // 0.7-1.0 in green zone
+        } else {
+            accuracy = Math.max(0, 0.7 - (dist - halfWidth) * 1.4); // falls off outside
+        }
+
+        this.stepResults.push(accuracy);
+        SFX.play('knotStep');
+
+        this.step++;
+        // Randomize sweet spot slightly for next step
+        this.sweetSpotCenter = 0.35 + Math.random() * 0.3;
+
+        if (this.step >= this.totalSteps) {
+            this.calculateScore();
+        } else {
+            document.getElementById('knot-prompt').textContent =
+                `Steg ${this.step + 1}/4: ${this.stepNames[this.step]} — Trykk MELLOMROM i grønn sone!`;
+        }
+    },
+
+    calculateScore() {
+        const sum = this.stepResults.reduce((a, b) => a + b, 0);
+        // Each step: accuracy 0-1 maps to 5-25 points
+        this.finalScore = Math.round(this.stepResults.reduce((total, acc) => total + 5 + acc * 20, 0));
+        this.finalScore = Math.min(100, Math.max(0, this.finalScore));
+
+        let tier, color;
+        if (this.finalScore >= 80) { tier = 'Perfekt knute!'; color = '#FFD700'; }
+        else if (this.finalScore >= 50) { tier = 'God knute'; color = '#C0C0C0'; }
+        else { tier = 'Svak knute'; color = '#E74C3C'; }
+
+        document.getElementById('knot-prompt').textContent = '';
+        document.getElementById('knot-result').innerHTML = `<span style="color:${color}">${tier}</span> — ${this.finalScore}%`;
+        document.getElementById('knot-skip').style.display = 'none';
+
+        SFX.play('knotComplete');
+
+        this.showingResult = true;
+        this.resultTimer = 1.5;
+    },
+
+    skip() {
+        if (!this.active || this.showingResult) return;
+        this.stepResults = [0.5, 0.5, 0.5, 0.5];
+        this.step = this.totalSteps;
+        this.finalScore = 50;
+
+        document.getElementById('knot-prompt').textContent = '';
+        document.getElementById('knot-result').innerHTML = `<span style="color:#C0C0C0">God knute</span> — 50%`;
+        document.getElementById('knot-skip').style.display = 'none';
+
+        this.showingResult = true;
+        this.resultTimer = 1.0;
+    },
+
+    finish() {
+        this.active = false;
+        if (this.animFrame) cancelAnimationFrame(this.animFrame);
+        UI.hideOverlay('overlay-knot');
+        Game.knotQuality = this.finalScore;
+        Game.startFishingDay();
+    },
+
+    render() {
+        const c = this.canvas;
+        const ctx = this.ctx;
+        const W = c.width;
+        const H = c.height;
+
+        ctx.clearRect(0, 0, W, H);
+
+        // Background
+        ctx.fillStyle = '#1A1A1A';
+        ctx.fillRect(0, 0, W, H);
+
+        // Draw rope/knot illustration (top half)
+        this.drawRope(ctx, W, H);
+
+        // Meter bar (bottom section)
+        if (!this.showingResult && this.step < this.totalSteps) {
+            const barX = 40;
+            const barY = H - 60;
+            const barW = W - 80;
+            const barH = 20;
+
+            // Bar background
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 4);
+            ctx.fill();
+
+            // Sweet spot (green zone)
+            const ssLeft = barX + (this.sweetSpotCenter - this.sweetSpotWidth / 2) * barW;
+            const ssWidth = this.sweetSpotWidth * barW;
+            ctx.fillStyle = 'rgba(39, 174, 96, 0.5)';
+            ctx.beginPath();
+            ctx.roundRect(ssLeft, barY, ssWidth, barH, 4);
+            ctx.fill();
+
+            // Marker
+            const markerX = barX + this.markerPos * barW;
+            ctx.fillStyle = '#FFDE17';
+            ctx.beginPath();
+            ctx.arc(markerX, barY + barH / 2, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#1A1A1A';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Step indicators (dots at bottom)
+        const dotY = H - 20;
+        for (let i = 0; i < this.totalSteps; i++) {
+            const dotX = W / 2 + (i - 1.5) * 30;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
+            if (i < this.stepResults.length) {
+                // Completed step — color by accuracy
+                const acc = this.stepResults[i];
+                if (acc >= 0.7) ctx.fillStyle = '#27AE60';
+                else if (acc >= 0.4) ctx.fillStyle = '#F39C12';
+                else ctx.fillStyle = '#E74C3C';
+            } else if (i === this.step && !this.showingResult) {
+                ctx.fillStyle = '#FFDE17';
+            } else {
+                ctx.fillStyle = '#444';
+            }
+            ctx.fill();
+
+            // Step label
+            ctx.fillStyle = '#999';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.stepNames[i], dotX, dotY + 20);
+        }
+    },
+
+    drawRope(ctx, W, H) {
+        const ropeY = 90;
+        const completed = this.stepResults.length;
+
+        ctx.strokeStyle = '#8B6914';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+
+        // Base rope line
+        ctx.beginPath();
+        ctx.moveTo(40, ropeY);
+        ctx.lineTo(W - 40, ropeY);
+        ctx.stroke();
+
+        // Progressive knot illustration
+        const cx = W / 2;
+
+        if (completed >= 1) {
+            // Step 1: Loop
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx - 30, ropeY);
+            ctx.bezierCurveTo(cx - 30, ropeY - 35, cx + 30, ropeY - 35, cx + 30, ropeY);
+            ctx.stroke();
+        }
+
+        if (completed >= 2) {
+            // Step 2: Wrap
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(cx + 20, ropeY + 5);
+            ctx.bezierCurveTo(cx + 10, ropeY - 20, cx - 10, ropeY - 20, cx - 20, ropeY + 5);
+            ctx.bezierCurveTo(cx - 10, ropeY + 20, cx + 10, ropeY + 20, cx + 20, ropeY + 5);
+            ctx.stroke();
+        }
+
+        if (completed >= 3) {
+            // Step 3: Thread through
+            ctx.strokeStyle = '#CD853F';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, ropeY - 30);
+            ctx.bezierCurveTo(cx + 5, ropeY - 10, cx - 5, ropeY + 10, cx, ropeY + 25);
+            ctx.stroke();
+        }
+
+        if (completed >= 4) {
+            // Step 4: Tightened knot (filled center)
+            ctx.fillStyle = 'rgba(218, 165, 32, 0.6)';
+            ctx.beginPath();
+            ctx.arc(cx, ropeY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Step label above rope
+        if (!this.showingResult && completed < this.totalSteps) {
+            ctx.fillStyle = '#FFDE17';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.stepNames[completed], cx, ropeY + 55);
+        }
     }
 };
 
@@ -1817,6 +2124,9 @@ const Game = {
     running: false,
     animFrame: null,
 
+    // Knot quality (0-100)
+    knotQuality: 50,
+
     // Get current equipment stats
     getGear() {
         const eq = Save.data.equipment || { rod: 0, line: 0, reel: 0, hook: 0, finder: 0 };
@@ -1863,6 +2173,11 @@ const Game = {
         // Init sound
         SFX.init();
 
+        // Launch knot-tying mini-game before fishing
+        KnotGame.start();
+    },
+
+    startFishingDay() {
         UI.showScreen('screen-fishing');
         Scene.init();
         this.updateHUD();
@@ -1971,15 +2286,26 @@ const Game = {
             this.tension = Math.max(0, Math.min(1, this.tension));
             this.fishProgress = Math.max(0, Math.min(1, this.fishProgress));
 
-            // Line snap — line quality raises threshold
-            if (this.tension > gear.line.snapThreshold) {
+            // Knot quality modifier
+            const knotMod = this.knotQuality / 100;
+
+            // Line snap — line quality raises threshold, bad knot weakens it
+            const effectiveSnap = gear.line.snapThreshold - (1 - knotMod) * 0.12;
+            if (this.tension > effectiveSnap) {
                 this.fishEscaped('Snøret røk! For mye spenning.');
                 return;
             }
 
-            // Fish escapes (too loose) — hook quality lowers threshold
-            if (this.tension < gear.hook.escapeThreshold && this.fightTime > 1000) {
+            // Fish escapes (too loose) — hook quality lowers threshold, bad knot raises it
+            const effectiveEscape = gear.hook.escapeThreshold + (1 - knotMod) * 0.04;
+            if (this.tension < effectiveEscape && this.fightTime > 1000) {
                 this.fishEscaped('Fisken ristet seg løs! Hold spenning på snøret.');
+                return;
+            }
+
+            // Random knot slip event — bad knot can come undone
+            if (Math.random() < (1 - knotMod) * 0.00003) {
+                this.fishEscaped('Knuten glapp! Fisken slapp unna.');
                 return;
             }
 
@@ -2170,7 +2496,7 @@ const Game = {
         this.castsLeft--;
         this.updateHUD();
 
-        if (reason.includes('røk')) SFX.play('lineSnap');
+        if (reason.includes('røk') || reason.includes('glapp')) SFX.play('lineSnap');
         else SFX.play('sadTrombone');
 
         document.getElementById('escape-title').textContent = 'Fisken slapp!';
@@ -2301,6 +2627,14 @@ const Game = {
         document.getElementById('hud-casts-total').textContent = this.castsTotal;
         document.getElementById('hud-coins').textContent = `${Save.data.coins} mynter`;
 
+        // Knot quality
+        const knotEl = document.getElementById('hud-knot');
+        if (knotEl) {
+            const kq = this.knotQuality;
+            let knotColor = kq >= 80 ? '#FFD700' : kq >= 50 ? '#C0C0C0' : '#E74C3C';
+            knotEl.innerHTML = `<span style="color:${knotColor}">Knute: ${kq}%</span>`;
+        }
+
         // Weather
         const weatherEl = document.getElementById('hud-weather');
         if (weatherEl && this.currentWeather) {
@@ -2369,6 +2703,13 @@ let spaceHandled = false;
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         e.preventDefault();
+        if (KnotGame.active) {
+            if (!spaceHandled) {
+                spaceHandled = true;
+                KnotGame.handleInput();
+            }
+            return;
+        }
         if (Game.phase === 'fighting') {
             Game.reeling = true;
         } else if (!spaceHandled) {
@@ -2388,6 +2729,10 @@ document.addEventListener('keyup', (e) => {
 // Touch support for mobile
 let touchActive = false;
 document.addEventListener('touchstart', (e) => {
+    if (KnotGame.active) {
+        KnotGame.handleInput();
+        return;
+    }
     if (!Game.running) return;
     touchActive = true;
     if (Game.phase === 'fighting') {

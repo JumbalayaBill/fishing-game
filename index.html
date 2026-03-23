@@ -83,6 +83,7 @@
                 <div class="hud-item" id="hud-weather"></div>
             </div>
             <div class="hud-right">
+                <div class="hud-item" id="hud-knot"></div>
                 <div class="hud-item" id="hud-challenge" title=""></div>
                 <div class="hud-item" id="hud-coins">0 mynter</div>
                 <button class="btn btn-small" id="hud-sound" onclick="SFX.toggle(); UI.updateSoundButton();">🔊</button>
@@ -124,6 +125,18 @@
             <div class="catch-medal-info" id="catch-medal-info" style="display:none"></div>
             <div class="catch-new-species" id="catch-new" style="display:none">NY ART!</div>
             <button class="btn btn-primary" onclick="Game.closeCatchOverlay()">Fortsett</button>
+        </div>
+    </div>
+
+    <!-- KNUTE-OVERLAY -->
+    <div id="overlay-knot" class="overlay">
+        <div class="knot-container">
+            <h2>Knuteknyter</h2>
+            <p class="knot-subtitle">Knytt knuten f&oslash;r du kaster ut!</p>
+            <canvas id="knot-canvas" width="400" height="260"></canvas>
+            <div class="knot-prompt" id="knot-prompt">Trykk MELLOMROM n&aring;r mark&oslash;ren er i gr&oslash;nn sone</div>
+            <div class="knot-result" id="knot-result"></div>
+            <button class="btn btn-secondary knot-skip" id="knot-skip" onclick="KnotGame.skip()">Hopp over</button>
         </div>
     </div>
 
@@ -239,6 +252,7 @@
                 <button class="btn btn-filter" onclick="UI.showGuideTab('bait', this)">Agn</button>
                 <button class="btn btn-filter" onclick="UI.showGuideTab('scoring', this)">Poeng</button>
                 <button class="btn btn-filter" onclick="UI.showGuideTab('gear', this)">Utstyr</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('knots', this)">Knuter</button>
             </div>
 
             <div class="guide-content" id="guide-content">
@@ -493,6 +507,42 @@
                         <li><strong>Stang</strong> &mdash; Raskere innhenting er kjekt, men ikke kritisk.</li>
                         <li><strong>Ekkolodd</strong> &mdash; Luksus. Gir betydelig flere napp n&aring;r du har r&aring;d.</li>
                     </ol>
+                </div>
+
+                <!-- KNUTER -->
+                <div class="guide-tab" id="guide-knots">
+                    <h3>Knuteknyter</h3>
+                    <p>F&oslash;r hver fiskedag f&aring;r du en knuteknytingsutfordring. Knytt en god knute for &aring; sikre at fisken sitter!</p>
+
+                    <h4>Slik fungerer det</h4>
+                    <p>Knuten knyttes i <strong>4 steg</strong>: l&oslash;kke, omvikling, tr&aring;ding og stramming. Hvert steg har en oscillerende mark&oslash;r &mdash; trykk MELLOMROM n&aring;r mark&oslash;ren er i den gr&oslash;nne sonen. Hvert steg blir raskere!</p>
+
+                    <h4>Poeng (0&ndash;100)</h4>
+                    <div class="guide-medals">
+                        <div class="medal-example">
+                            <span style="color: var(--gold);">Perfekt knute!</span>
+                            <span>80&ndash;100 poeng</span>
+                        </div>
+                        <div class="medal-example">
+                            <span style="color: var(--silver);">God knute</span>
+                            <span>50&ndash;79 poeng</span>
+                        </div>
+                        <div class="medal-example">
+                            <span style="color: var(--danger);">Svak knute</span>
+                            <span>0&ndash;49 poeng</span>
+                        </div>
+                    </div>
+
+                    <h4>Effekt p&aring; fisking</h4>
+                    <ul>
+                        <li>D&aring;rlig knute <strong>svekker sn&oslash;ret</strong> &mdash; det ryker lettere</li>
+                        <li>D&aring;rlig knute gj&oslash;r at <strong>kroken sitter l&oslash;sere</strong> &mdash; fisken rister seg lettere l&oslash;s</li>
+                        <li>D&aring;rlig knute kan <strong>gli opp</strong> under kamp &mdash; &laquo;Knuten glapp!&raquo;</li>
+                    </ul>
+
+                    <div class="guide-tip">
+                        <strong>Tips:</strong> Du kan hoppe over knuteknytingen for en standardscore p&aring; 50. Ikke perfekt, men greit nok!
+                    </div>
                 </div>
 
             </div>

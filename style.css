@@ -1205,6 +1205,64 @@ body {
     color: var(--text);
 }
 
+/* ===== KNOT MINI-GAME ===== */
+.knot-container {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 30px 40px;
+    text-align: center;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.4s ease-out;
+}
+
+.knot-container h2 {
+    font-size: 22px;
+    margin-bottom: 4px;
+    color: var(--accent);
+}
+
+.knot-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+#knot-canvas {
+    display: block;
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    margin: 0 auto 12px;
+    border-radius: var(--radius);
+}
+
+.knot-prompt {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    min-height: 22px;
+    margin-bottom: 12px;
+}
+
+.knot-result {
+    font-size: 20px;
+    font-weight: 800;
+    min-height: 28px;
+    margin-bottom: 12px;
+}
+
+.knot-skip {
+    font-size: 14px;
+    padding: 8px 20px;
+}
+
+#hud-knot {
+    font-size: 13px;
+    font-weight: 600;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .title-subtitle { font-size: 16px; letter-spacing: 2px; }
