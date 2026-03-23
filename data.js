@@ -129,10 +129,10 @@ const BAITS = [
 ];
 
 const TIME_OF_DAY = [
-    { id: 'dawn', name: 'Daggry', icon: '🌅', multiplier: 1.3, description: 'Fisken er aktiv og sulten ved daggry.' },
-    { id: 'day', name: 'Dag', icon: '☀️', multiplier: 1.0, description: 'Normale fiskeforhold.' },
-    { id: 'dusk', name: 'Skumring', icon: '🌇', multiplier: 1.4, description: 'Beste bitetid. Høyest sjanse for napp.' },
-    { id: 'night', name: 'Natt', icon: '🌙', multiplier: 1.1, description: 'Roligere, men noen arter er nattaktive.' }
+    { id: 'dawn', name: 'Daggry', icon: '🌅', multiplier: 1.3, sizeBonus: 1.0, fightMod: 1.0, castMod: 0, description: 'Godt napp. Allsidig og pålitelig.' },
+    { id: 'day', name: 'Dag', icon: '☀️', multiplier: 1.0, sizeBonus: 1.4, fightMod: 0.85, castMod: 2, description: 'Færre napp, men større fisk og roligere kamp. +2 ekstra kast.' },
+    { id: 'dusk', name: 'Skumring', icon: '🌇', multiplier: 1.5, sizeBonus: 1.0, fightMod: 1.0, castMod: -2, description: 'Flest napp, men kort økt (-2 kast).' },
+    { id: 'night', name: 'Natt', icon: '🌙', multiplier: 1.1, sizeBonus: 1.15, fightMod: 1.25, castMod: 0, description: 'Nattaktive arter. Større fisk, men hardere kamp.' }
 ];
 
 // Fiskearter - basert på ekte data fra artsfiske.com API

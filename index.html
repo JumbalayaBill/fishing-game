@@ -23,6 +23,7 @@
             <button class="btn btn-primary" onclick="Game.start()">Start fisketur</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-collection')">Min samling</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-highscores')">Toppliste</button>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-guide')">Spillguide</button>
             <div class="title-footer">
                 <p>Inspirert av <a href="https://artsfiske.com" target="_blank">artsfiske.com</a></p>
             </div>
@@ -180,6 +181,281 @@
             <div class="shop-coins">Saldo: <strong id="shop-coins">0</strong> mynter</div>
             <div class="shop-grid" id="shop-grid"></div>
             <button class="btn btn-secondary" onclick="Game.start()">Tilbake</button>
+        </div>
+    </div>
+
+    <!-- SPILLGUIDE -->
+    <div id="screen-guide" class="screen">
+        <div class="guide-container">
+            <h2>Spillguide</h2>
+
+            <div class="guide-tabs">
+                <button class="btn btn-filter active" onclick="UI.showGuideTab('basics', this)">Grunnleggende</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('casting', this)">Kasting</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('fighting', this)">Fiskekamp</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('time', this)">Tidspunkt</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('bait', this)">Agn</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('scoring', this)">Poeng</button>
+                <button class="btn btn-filter" onclick="UI.showGuideTab('gear', this)">Utstyr</button>
+            </div>
+
+            <div class="guide-content" id="guide-content">
+
+                <!-- GRUNNLEGGENDE -->
+                <div class="guide-tab active" id="guide-basics">
+                    <h3>Slik spiller du</h3>
+                    <div class="guide-steps">
+                        <div class="guide-step">
+                            <div class="step-num">1</div>
+                            <div class="step-text">
+                                <strong>Velg oppsett</strong> &mdash; Velg sted, agn og tid p&aring; d&oslash;gnet. Hvert valg p&aring;virker hva du kan fange.
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">2</div>
+                            <div class="step-text">
+                                <strong>Kast ut</strong> &mdash; Trykk MELLOMROM for &aring; starte kastm&aring;leren, trykk igjen for &aring; sette kraften. Sikt n&aelig;r den stiplete linjen!
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">3</div>
+                            <div class="step-text">
+                                <strong>Vent p&aring; napp</strong> &mdash; N&aring;r det st&aring;r &laquo;NAPP!&raquo;, trykk MELLOMROM raskt for &aring; sette kroken.
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">4</div>
+                            <div class="step-text">
+                                <strong>Kjempe mot fisken</strong> &mdash; Hold MELLOMROM for &aring; dra inn. Slipp for &aring; senke spenningen. Hold spenningen i gr&oslash;nn sone!
+                            </div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">5</div>
+                            <div class="step-text">
+                                <strong>Samle arter</strong> &mdash; Tjen mynter, l&aring;s opp nye steder og agn, og oppgrader utstyret i butikken.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="guide-tip">
+                        <strong>Tips:</strong> P&aring; mobil bruker du touch i stedet for MELLOMROM. Hold fingeren p&aring; skjermen for &aring; dra inn.
+                    </div>
+                </div>
+
+                <!-- KASTING -->
+                <div class="guide-tab" id="guide-casting">
+                    <h3>Kastmekanikk</h3>
+                    <p>N&aring;r du kaster, oscillerer en kraftm&aring;ler fra 0 til 100. Trykk MELLOMROM for &aring; stoppe den.</p>
+
+                    <div class="guide-highlight">
+                        <strong>Den stiplete gule linjen</strong> er plassert p&aring; 65% &mdash; dette er &laquo;sweet spot&raquo;.
+                    </div>
+
+                    <h4>Hvorfor er 65% best?</h4>
+                    <ul>
+                        <li>Kast mellom <strong>50&ndash;90</strong> gir <strong>+30% sjanse for napp</strong></li>
+                        <li>Kast over <strong>70</strong> gir +50% sjanse for <strong>sjeldne arter</strong></li>
+                        <li>Kast under <strong>30</strong> gir 70% lavere sjanse for vanskelige (store) fisker</li>
+                    </ul>
+                    <p>65 er midt i napp-bonussonen og langt nok til &aring; n&aring; sjeldne arter. Du trenger ikke treffe <em>n&oslash;yaktig</em> &mdash; alt mellom 50 og 90 er bra.</p>
+
+                    <div class="guide-tip">
+                        <strong>Tips:</strong> Korte kast (under 30) er kun nyttig hvis du vil fange sm&aring;fisk raskt for &aring; tjene mynter.
+                    </div>
+                </div>
+
+                <!-- FISKEKAMP -->
+                <div class="guide-tab" id="guide-fighting">
+                    <h3>Fiskekamp</h3>
+                    <p>N&aring;r du setter kroken starter kampen. En loddrett <strong>spenningsmaler</strong> vises til h&oslash;yre, og en <strong>fremdriftsbar</strong> nederst.</p>
+
+                    <h4>Spenningsm&aring;leren</h4>
+                    <div class="guide-meter-legend">
+                        <div class="meter-zone red-top">R&oslash;d sone (topp) &mdash; Sn&oslash;ret ryker!</div>
+                        <div class="meter-zone green">Gr&oslash;nn sone &mdash; Trygt omr&aring;de</div>
+                        <div class="meter-zone red-bottom">R&oslash;d sone (bunn) &mdash; Fisken rister seg l&oslash;s!</div>
+                    </div>
+
+                    <h4>Slik gj&oslash;r du det</h4>
+                    <ul>
+                        <li><strong>Hold MELLOMROM</strong> = drar inn fisken (fremgang &oslash;ker), men spenningen stiger</li>
+                        <li><strong>Slipp MELLOMROM</strong> = spenningen synker, men fisken kan sv&oslash;mme unna</li>
+                    </ul>
+
+                    <div class="guide-highlight">
+                        <strong>N&oslash;kkelen er &aring; pumpe!</strong> Hold inne, slipp, hold inne, slipp. Ikke hold konstant &mdash; da ryker sn&oslash;ret.
+                    </div>
+
+                    <h4>Hva p&aring;virker kampen?</h4>
+                    <ul>
+                        <li>Fiskens <strong>vanskelighetsgrad</strong> (1&ndash;10) bestemmer hvor hardt den drar</li>
+                        <li>Noen fisker er <strong>aggressive</strong> (f.eks. gjedde) og har plutselige kraftige rykk</li>
+                        <li>Bedre <strong>snelle</strong> = raskere avkj&oslash;ling n&aring;r du slipper</li>
+                        <li>Bedre <strong>sn&oslash;re</strong> = bredere gr&oslash;nn sone + t&aring;ler mer spenning</li>
+                        <li>Bedre <strong>stang</strong> = fremdrift &oslash;ker raskere</li>
+                    </ul>
+                </div>
+
+                <!-- TIDSPUNKT -->
+                <div class="guide-tab" id="guide-time">
+                    <h3>Tid p&aring; d&oslash;gnet</h3>
+                    <p>Hvert tidspunkt har unike fordeler og ulemper. Det finnes ikke ett &laquo;best&raquo; valg &mdash; det avhenger av m&aring;let ditt.</p>
+
+                    <div class="guide-table">
+                        <div class="guide-table-row header">
+                            <span>Tid</span><span>Napp</span><span>St&oslash;rrelse</span><span>Kamp</span><span>Kast</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🌅 Daggry</span><span class="good">1.3&times;</span><span>Normal</span><span>Normal</span><span>+0</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>☀️ Dag</span><span>1.0&times;</span><span class="great">+40%</span><span class="great">15% lettere</span><span class="great">+2</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🌇 Skumring</span><span class="great">1.5&times;</span><span>Normal</span><span>Normal</span><span class="bad">&minus;2</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🌙 Natt</span><span>1.1&times;</span><span class="good">+15%</span><span class="bad">25% hardere</span><span>+0</span>
+                        </div>
+                    </div>
+
+                    <h4>N&aring;r velge hva?</h4>
+                    <ul>
+                        <li><strong>Daggry</strong> &mdash; Trygt allroundvalg. Godt for nybegynnere.</li>
+                        <li><strong>Dag</strong> &mdash; Best for <strong>medaljejakt</strong>! St&oslash;rre fisk, lettere kamp, og 2 ekstra kast.</li>
+                        <li><strong>Skumring</strong> &mdash; Best for &aring; <strong>oppdage nye arter</strong>. Flest napp, men f&aelig;rre kast.</li>
+                        <li><strong>Natt</strong> &mdash; Nattaktive arter f&aring;r <strong>stor bonus</strong>: &aring;l (&times;2), gj&oslash;rs (&times;1.8), lake (&times;1.8). Men fisken kjemper hardere.</li>
+                    </ul>
+                </div>
+
+                <!-- AGN -->
+                <div class="guide-tab" id="guide-bait">
+                    <h3>Agn og strategi</h3>
+                    <p>Hvert agn har to effekter:</p>
+                    <ol>
+                        <li><strong>Effektivitet</strong> &mdash; generell nappsjanse for ferskvann/saltvann</li>
+                        <li><strong>Tiltrekning</strong> &mdash; 2.5&times; &oslash;kt sjanse for bestemte arter</li>
+                    </ol>
+
+                    <div class="guide-table">
+                        <div class="guide-table-row header">
+                            <span>Agn</span><span>Ferskvann</span><span>Saltvann</span><span>Best for</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🪱 Mark</span><span class="great">80%</span><span class="bad">30%</span><span>Sm&aring;fisk i innsj&oslash;</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🔩 Sluk</span><span class="good">70%</span><span class="ok">50%</span><span>Rovfisk (gjedde, abbor)</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🪶 Flue</span><span class="great">90%</span><span class="bad">10%</span><span>Laks, &oslash;rret, harr</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🦐 Reke</span><span class="bad">20%</span><span class="great">90%</span><span>Torsk, lyr, berggylte</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🎣 Pilk</span><span class="bad">10%</span><span class="good">80%</span><span>Dyphavsfisk (sei, lange)</span>
+                        </div>
+                        <div class="guide-table-row">
+                            <span>🐟 Makrellagn</span><span class="bad">0%</span><span class="great">100%</span><span>Havets st&oslash;rste (kveite, h&aring;kjerring)</span>
+                        </div>
+                    </div>
+
+                    <div class="guide-tip">
+                        <strong>Tips:</strong> Sj&oslash;r p&aring; info-boksen n&aring;r du velger oppsett &mdash; den viser effektiviteten i prosent for valgt kombinasjon.
+                    </div>
+                </div>
+
+                <!-- POENG OG MEDALJER -->
+                <div class="guide-tab" id="guide-scoring">
+                    <h3>Poeng og medaljer</h3>
+
+                    <h4>Poengberegning</h4>
+                    <div class="guide-highlight">
+                        <strong>Poeng = (fanget vekt &divide; rekordvekt) &times; 100</strong>
+                    </div>
+                    <p>Eksempel: Du fanger en torsk p&aring; 20 kg. Rekorden er 41.72 kg. Poeng = (20000 / 41720) &times; 100 = <strong>47.94 poeng</strong>.</p>
+
+                    <h4>Medaljer</h4>
+                    <p>Hver art har <strong>egne medaljegrenser</strong> basert p&aring; ekte data fra artsfiske.com. Medaljene er basert p&aring; <strong>vekt</strong>, ikke poeng.</p>
+
+                    <div class="guide-medals">
+                        <div class="medal-example">
+                            <span>🥉 Bronse</span>
+                            <span>N&aring; artens bronsegrense</span>
+                        </div>
+                        <div class="medal-example">
+                            <span>🥈 S&oslash;lv</span>
+                            <span>N&aring; artens s&oslash;lvgrense</span>
+                        </div>
+                        <div class="medal-example">
+                            <span>🥇 Gull</span>
+                            <span>N&aring; artens gullgrense</span>
+                        </div>
+                    </div>
+
+                    <p>Eksempel: Torsk har bronse &ge;10 kg, s&oslash;lv &ge;20 kg, gull &ge;30 kg. Abbor har bronse &ge;500 g, s&oslash;lv &ge;1 kg, gull &ge;1.5 kg.</p>
+
+                    <h4>Mynter</h4>
+                    <p>Du tjener mynter for hver fangst:</p>
+                    <ul>
+                        <li>Grunnbel&oslash;p: 10 mynter + fiskens vanskelighetsgrad &times; 5</li>
+                        <li>St&oslash;rrelsesbonus basert p&aring; poeng</li>
+                        <li><strong>+25 bonus</strong> for ny art</li>
+                        <li><strong>&times;2 bonus</strong> for legendariske arter (laks, kveite, h&aring;kjerring)</li>
+                    </ul>
+                </div>
+
+                <!-- UTSTYR -->
+                <div class="guide-tab" id="guide-gear">
+                    <h3>Utstyr</h3>
+                    <p>I utstyrsbutikken kan du oppgradere fem kategorier. Hvert niv&aring; m&aring; kj&oslash;pes i rekkef&oslash;lge.</p>
+
+                    <div class="guide-gear-list">
+                        <div class="guide-gear-item">
+                            <span class="gear-icon">🎣</span>
+                            <div>
+                                <strong>Stang</strong> &mdash; Raskere innhenting. Du fyller fremdriftsbaren raskere.
+                            </div>
+                        </div>
+                        <div class="guide-gear-item">
+                            <span class="gear-icon">🧵</span>
+                            <div>
+                                <strong>Sn&oslash;re</strong> &mdash; Sterkere sn&oslash;re t&aring;ler mer spenning, og gr&oslash;nn sone blir bredere.
+                            </div>
+                        </div>
+                        <div class="guide-gear-item">
+                            <span class="gear-icon">⚙️</span>
+                            <div>
+                                <strong>Snelle</strong> &mdash; Raskere avkj&oslash;ling. Spenningen synker mye raskere n&aring;r du slipper.
+                            </div>
+                        </div>
+                        <div class="guide-gear-item">
+                            <span class="gear-icon">🪝</span>
+                            <div>
+                                <strong>Krok</strong> &mdash; Lengre reaksjonstid ved napp, og fisken sitter bedre p&aring; kroken.
+                            </div>
+                        </div>
+                        <div class="guide-gear-item">
+                            <span class="gear-icon">📡</span>
+                            <div>
+                                <strong>Ekkolodd</strong> &mdash; &Oslash;ker sjansen for napp. En luksusgjenstand som gj&oslash;r at fisken finner agnet raskere.
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4>Anbefalt kj&oslash;psrekkef&oslash;lge</h4>
+                    <ol>
+                        <li><strong>Snelle</strong> &mdash; Den viktigste oppgraderingen. L&oslash;ser problemet med at spenningen bygger seg opp.</li>
+                        <li><strong>Sn&oslash;re</strong> &mdash; Bredere gr&oslash;nn sone gir mye mer spillerom.</li>
+                        <li><strong>Krok</strong> &mdash; Lengre reaksjonstid er veldig nyttig.</li>
+                        <li><strong>Stang</strong> &mdash; Raskere innhenting er kjekt, men ikke kritisk.</li>
+                        <li><strong>Ekkolodd</strong> &mdash; Luksus. Gir betydelig flere napp n&aring;r du har r&aring;d.</li>
+                    </ol>
+                </div>
+
+            </div>
+
+            <button class="btn btn-secondary guide-back" onclick="UI.showScreen('screen-title')">Tilbake</button>
         </div>
     </div>
 

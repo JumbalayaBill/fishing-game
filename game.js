@@ -298,6 +298,14 @@ const UI = {
         `).join('');
     },
 
+    showGuideTab(tabId, btn) {
+        document.querySelectorAll('.guide-tabs .btn-filter').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.guide-tab').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        const tab = document.getElementById('guide-' + tabId);
+        if (tab) tab.classList.add('active');
+    },
+
     renderShop() {
         const grid = document.getElementById('shop-grid');
         const eq = Save.data.equipment || { rod: 0, line: 0, reel: 0, hook: 0, finder: 0 };
@@ -1227,8 +1235,10 @@ const Game = {
         const bait = BAITS.find(b => b.id === this.selectedBait);
         if (!bait || !Save.data.unlockedBaits.includes(bait.id)) return;
 
-        this.castsTotal = loc.castCount;
-        this.castsLeft = loc.castCount;
+        const time = TIME_OF_DAY.find(t => t.id === this.selectedTime) || TIME_OF_DAY[0];
+        const totalCasts = loc.castCount + (time.castMod || 0);
+        this.castsTotal = totalCasts;
+        this.castsLeft = totalCasts;
         this.dayCoins = 0;
         this.dayCatches = [];
         this.daySpecies = new Set();
@@ -1304,10 +1314,11 @@ const Game = {
             // Get equipment stats
             const gear = Game.getGear();
 
-            // Fish pull behavior - varies by difficulty
+            // Fish pull behavior - varies by difficulty and time of day
+            const timeData = TIME_OF_DAY.find(t => t.id === Game.selectedTime) || TIME_OF_DAY[0];
             this.fishPullTimer -= 16;
             if (this.fishPullTimer <= 0) {
-                this.fishPullStrength = (0.3 + Math.random() * 0.7) * (this.fishDifficulty / 10);
+                this.fishPullStrength = (0.3 + Math.random() * 0.7) * (this.fishDifficulty / 10) * (timeData.fightMod || 1.0);
                 this.fishPullTimer = 400 + Math.random() * 800;
 
                 // Aggressive fish have burst pulls
@@ -1412,8 +1423,11 @@ const Game = {
 
                 // Generate weight and length
                 const sizeRoll = Math.random();
+                const timeData = TIME_OF_DAY.find(t => t.id === Game.selectedTime) || TIME_OF_DAY[0];
                 // Skewed toward smaller fish - bigger specimens are rarer
-                const sizeFactor = Math.pow(sizeRoll, 1.5);
+                // sizeBonus > 1 flattens the curve, giving bigger fish on average
+                const sizeExponent = 1.5 / (timeData.sizeBonus || 1.0);
+                const sizeFactor = Math.pow(sizeRoll, sizeExponent);
                 this.activeFishWeight = fish.minWeight + (fish.maxWeight - fish.minWeight) * sizeFactor;
                 this.activeFishLength = fish.minLength + (fish.maxLength - fish.minLength) * sizeFactor;
                 this.fishDifficulty = fish.difficulty;

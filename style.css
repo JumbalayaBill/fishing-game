@@ -797,6 +797,242 @@ body {
     cursor: not-allowed;
 }
 
+/* ===== SPILLGUIDE ===== */
+.guide-container {
+    max-width: 700px;
+    width: 100%;
+    padding: 30px;
+}
+#screen-guide.active { align-items: flex-start; padding-top: 40px; }
+
+.guide-container h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.guide-tabs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.guide-content {
+    margin-bottom: 20px;
+}
+
+.guide-tab {
+    display: none;
+}
+.guide-tab.active {
+    display: block;
+}
+
+.guide-tab h3 {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: var(--accent);
+}
+
+.guide-tab h4 {
+    font-size: 15px;
+    margin: 16px 0 8px;
+    color: var(--text);
+}
+
+.guide-tab p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.guide-tab ul, .guide-tab ol {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    padding-left: 20px;
+    margin-bottom: 10px;
+}
+
+.guide-tab li {
+    margin-bottom: 4px;
+}
+
+.guide-tab li strong {
+    color: var(--text);
+}
+
+/* Steps */
+.guide-steps {
+    margin: 16px 0;
+}
+
+.guide-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.step-num {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-text {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+.step-text strong {
+    color: var(--text);
+}
+
+/* Tip box */
+.guide-tip {
+    background: rgba(255, 222, 23, 0.08);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 14px 0;
+    line-height: 1.5;
+}
+.guide-tip strong {
+    color: var(--accent);
+}
+
+/* Highlight box */
+.guide-highlight {
+    background: rgba(45, 91, 163, 0.15);
+    border: 1px solid var(--primary);
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    color: var(--text);
+    margin: 14px 0;
+    text-align: center;
+}
+
+/* Table */
+.guide-table {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+.guide-table-row {
+    display: grid;
+    grid-template-columns: 1.4fr repeat(4, 1fr);
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    align-items: center;
+}
+
+.guide-table-row.header {
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(255,255,255,0.03);
+}
+
+/* Bait table has different columns */
+.guide-tab:nth-child(5) .guide-table-row,
+#guide-bait .guide-table-row {
+    grid-template-columns: 1.3fr 0.8fr 0.8fr 1.4fr;
+}
+
+.guide-table-row .great { color: var(--success); font-weight: 600; }
+.guide-table-row .good { color: #7ACC7A; }
+.guide-table-row .ok { color: var(--warning); }
+.guide-table-row .bad { color: var(--danger); }
+
+/* Meter legend */
+.guide-meter-legend {
+    margin: 12px 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.meter-zone {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.meter-zone.red-top {
+    background: rgba(231, 76, 60, 0.25);
+    color: var(--danger);
+}
+.meter-zone.green {
+    background: rgba(39, 174, 96, 0.2);
+    color: var(--success);
+}
+.meter-zone.red-bottom {
+    background: rgba(231, 76, 60, 0.25);
+    color: var(--danger);
+}
+
+/* Medal examples */
+.guide-medals {
+    margin: 12px 0;
+}
+.medal-example {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+.medal-example span:first-child { font-weight: 600; }
+.medal-example span:last-child { color: var(--text-muted); }
+
+/* Gear list */
+.guide-gear-list {
+    margin: 12px 0;
+}
+.guide-gear-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--radius);
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+.guide-gear-item strong { color: var(--text); }
+.gear-icon {
+    font-size: 22px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.guide-back {
+    display: block;
+    margin: 0 auto;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .title-subtitle { font-size: 16px; letter-spacing: 2px; }
@@ -806,7 +1042,10 @@ body {
     .summary-stats { grid-template-columns: 1fr; }
     .catch-card, .escape-card, .summary-card { padding: 20px; }
     .fishing-hud { font-size: 12px; }
-    .setup-container, .collection-container, .highscores-container, .shop-container { padding: 16px; }
+    .setup-container, .collection-container, .highscores-container, .shop-container, .guide-container { padding: 16px; }
     .shop-tiers { grid-template-columns: repeat(2, 1fr); }
     .setup-actions { flex-wrap: wrap; }
+    .guide-tabs { gap: 4px; }
+    .guide-tabs .btn-filter { padding: 6px 10px; font-size: 11px; }
+    .guide-table-row { font-size: 11px; padding: 6px 8px; }
 }
