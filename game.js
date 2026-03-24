@@ -1472,15 +1472,10 @@ const Scene = {
         // Water
         this.drawWater(ctx, w, h, waterLine, loc);
 
-        // Weather effects
+        // Fog drawn before shoreline (sits behind land)
         const weather = Game.currentWeather;
-        if (weather) {
-            if (weather.visual === 'rain') this.drawRain(ctx, w, h);
-            else if (weather.visual === 'fog') this.drawFog(ctx, w, h, waterLine);
-            else if (weather.visual === 'storm') {
-                this.drawHeavyRain(ctx, w, h);
-                this.drawLightning(ctx, w, h);
-            }
+        if (weather && weather.visual === 'fog') {
+            this.drawFog(ctx, w, h, waterLine);
         }
 
         // Shoreline and avatar
@@ -1514,6 +1509,15 @@ const Scene = {
 
         // Particles
         this.updateParticles(ctx);
+
+        // Rain/storm drawn last so it falls over everything
+        if (weather) {
+            if (weather.visual === 'rain') this.drawRain(ctx, w, h);
+            else if (weather.visual === 'storm') {
+                this.drawHeavyRain(ctx, w, h);
+                this.drawLightning(ctx, w, h);
+            }
+        }
     },
 
     drawSky(ctx, w, h, wl, loc, tod) {
