@@ -590,11 +590,16 @@ const AVATAR_OPTIONS = {
     ],
     hair: [
         { id: 'none', name: 'Ingen', color: null },
-        { id: 'brown', name: 'Brun', color: '#4A3728' },
-        { id: 'blond', name: 'Blond', color: '#D4A843' },
-        { id: 'black', name: 'Svart', color: '#1A1A1A' },
-        { id: 'red', name: 'Rød', color: '#8B3A1A' },
-        { id: 'gray', name: 'Grå', color: '#9E9E9E' }
+        { id: 'brown', name: 'Kort brun', color: '#4A3728' },
+        { id: 'blond', name: 'Kort blond', color: '#D4A843' },
+        { id: 'black', name: 'Kort svart', color: '#1A1A1A' },
+        { id: 'red', name: 'Kort rød', color: '#8B3A1A' },
+        { id: 'gray', name: 'Kort grå', color: '#9E9E9E' },
+        { id: 'long_brown', name: 'Langt brunt', color: '#4A3728', long: true },
+        { id: 'long_blond', name: 'Langt blondt', color: '#D4A843', long: true },
+        { id: 'long_black', name: 'Langt svart', color: '#1A1A1A', long: true },
+        { id: 'long_red', name: 'Langt rødt', color: '#8B3A1A', long: true },
+        { id: 'long_pink', name: 'Langt rosa', color: '#E891B2', long: true }
     ],
     hat: [
         { id: 'none', name: 'Ingen', color: null },
@@ -602,20 +607,35 @@ const AVATAR_OPTIONS = {
         { id: 'bucket', name: 'Bøttehatt', color: '#5D6B3A' },
         { id: 'beanie', name: 'Lue', color: '#C0392B' },
         { id: 'cowboy', name: 'Cowboyhatt', color: '#8B6914' },
-        { id: 'gold_cap', name: 'Gullcaps', color: '#FFD700' }
+        { id: 'gold_cap', name: 'Gullcaps', color: '#FFD700' },
+        { id: 'sunhat', name: 'Solhatt', color: '#F5DEB3' },
+        { id: 'bow', name: 'Sløyfe', color: '#E74C8B' },
+        { id: 'headband', name: 'Hårbånd', color: '#9B59B6' }
     ],
     jacket: [
         { id: 'tshirt', name: 'T-skjorte', color: '#3498DB' },
         { id: 'vest', name: 'Fiskevest', color: '#5D6B3A' },
         { id: 'hoodie', name: 'Hettegenser', color: '#7F8C8D' },
         { id: 'raincoat', name: 'Regnjakke', color: '#F1C40F' },
-        { id: 'flannel', name: 'Flanellskjorte', color: '#C0392B' }
+        { id: 'flannel', name: 'Flanellskjorte', color: '#C0392B' },
+        { id: 'pink_tee', name: 'Rosa t-skjorte', color: '#E891B2' },
+        { id: 'striped', name: 'Stripete', color: '#5B8DBE' },
+        { id: 'puffer', name: 'Boblejakke', color: '#9B59B6' }
     ],
     pants: [
         { id: 'jeans', name: 'Jeans', color: '#2C3E6B' },
         { id: 'cargo', name: 'Cargobukse', color: '#5D6B3A' },
         { id: 'waders', name: 'Vadere', color: '#4A6B3A' },
-        { id: 'shorts', name: 'Shorts', color: '#D4A574' }
+        { id: 'shorts', name: 'Shorts', color: '#D4A574' },
+        { id: 'skirt', name: 'Skjørt', color: '#2C3E6B', skirt: true },
+        { id: 'leggings', name: 'Tights', color: '#1A1A2E' }
+    ],
+    accessory: [
+        { id: 'none', name: 'Ingen', color: null },
+        { id: 'sunglasses', name: 'Solbriller', color: '#1A1A1A' },
+        { id: 'scarf', name: 'Skjerf', color: '#E74C3C' },
+        { id: 'necklace', name: 'Halskjede', color: '#FFD700' },
+        { id: 'earrings', name: 'Øredobber', color: '#FFD700' }
     ]
 };
 
@@ -637,7 +657,8 @@ const DEFAULT_SAVE = {
         hair: 'brown',
         hat: 'cap',
         jacket: 'vest',
-        pants: 'jeans'
+        pants: 'jeans',
+        accessory: 'none'
     },
     totalCatches: 0,
     totalPoints: 0,

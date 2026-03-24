@@ -35,7 +35,8 @@ const Save = {
         if (!this.data.locationHistory) this.data.locationHistory = {};
         if (this.data.soundEnabled === undefined) this.data.soundEnabled = true;
         if (this.data.dailyChallengeCompleted === undefined) this.data.dailyChallengeCompleted = null;
-        if (!this.data.avatar) this.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
+        if (!this.data.avatar) this.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans', accessory: 'none' };
+        if (this.data.avatar && !this.data.avatar.accessory) this.data.avatar.accessory = 'none';
     },
     save() {
         localStorage.setItem('artsfisker_save', JSON.stringify(this.data));
@@ -2123,13 +2124,14 @@ const Scene = {
 // --- Avatar Renderer ---
 const AvatarRenderer = {
     draw(ctx, w, h, avatarData) {
-        const av = avatarData || (Save.data && Save.data.avatar) || { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
+        const av = avatarData || (Save.data && Save.data.avatar) || { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans', accessory: 'none' };
 
         const skin = (AVATAR_OPTIONS.skinTone.find(s => s.id === av.skinTone) || AVATAR_OPTIONS.skinTone[0]).color;
         const hairOpt = AVATAR_OPTIONS.hair.find(h => h.id === av.hair) || AVATAR_OPTIONS.hair[1];
         const hatOpt = AVATAR_OPTIONS.hat.find(h => h.id === av.hat) || AVATAR_OPTIONS.hat[0];
         const jacketOpt = AVATAR_OPTIONS.jacket.find(j => j.id === av.jacket) || AVATAR_OPTIONS.jacket[0];
         const pantsOpt = AVATAR_OPTIONS.pants.find(p => p.id === av.pants) || AVATAR_OPTIONS.pants[0];
+        const accOpt = AVATAR_OPTIONS.accessory.find(a => a.id === av.accessory) || AVATAR_OPTIONS.accessory[0];
 
         const cx = w / 2;
         const scale = h / 200;
@@ -2138,21 +2140,70 @@ const AvatarRenderer = {
         ctx.translate(cx, 0);
         ctx.scale(scale, scale);
 
-        // Legs / pants
-        ctx.fillStyle = pantsOpt.color;
-        ctx.fillRect(-14, 130, 12, 45);
-        ctx.fillRect(2, 130, 12, 45);
+        // Long hair behind body (drawn first so it's behind shoulders)
+        if (hairOpt.long && hairOpt.color) {
+            ctx.fillStyle = hairOpt.color;
+            // Hair flowing down behind shoulders
+            ctx.beginPath();
+            ctx.moveTo(-20, 40);
+            ctx.bezierCurveTo(-26, 60, -28, 90, -22, 110);
+            ctx.lineTo(-14, 110);
+            ctx.bezierCurveTo(-18, 85, -18, 60, -16, 40);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(20, 40);
+            ctx.bezierCurveTo(26, 60, 28, 90, 22, 110);
+            ctx.lineTo(14, 110);
+            ctx.bezierCurveTo(18, 85, 18, 60, 16, 40);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Legs / pants / skirt
+        if (pantsOpt.skirt) {
+            // Skirt - A-line shape
+            ctx.fillStyle = pantsOpt.color;
+            ctx.beginPath();
+            ctx.moveTo(-20, 130);
+            ctx.lineTo(-26, 162);
+            ctx.lineTo(26, 162);
+            ctx.lineTo(20, 130);
+            ctx.closePath();
+            ctx.fill();
+            // Legs below skirt
+            ctx.fillStyle = skin;
+            ctx.fillRect(-10, 160, 8, 14);
+            ctx.fillRect(2, 160, 8, 14);
+        } else {
+            ctx.fillStyle = pantsOpt.color;
+            ctx.fillRect(-14, 130, 12, 45);
+            ctx.fillRect(2, 130, 12, 45);
+        }
 
         // Shoes
         ctx.fillStyle = '#333';
-        ctx.fillRect(-16, 172, 16, 8);
-        ctx.fillRect(0, 172, 16, 8);
+        const shoeY = pantsOpt.skirt ? 172 : 172;
+        ctx.fillRect(-16, shoeY, 16, 8);
+        ctx.fillRect(0, shoeY, 16, 8);
 
         // Body / jacket
         ctx.fillStyle = jacketOpt.color;
         ctx.beginPath();
         ctx.roundRect(-20, 75, 40, 58, 4);
         ctx.fill();
+
+        // Striped pattern for striped shirt
+        if (av.jacket === 'striped') {
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.lineWidth = 2;
+            for (let sy = 80; sy < 130; sy += 6) {
+                ctx.beginPath();
+                ctx.moveTo(-18, sy);
+                ctx.lineTo(18, sy);
+                ctx.stroke();
+            }
+        }
 
         // Arms
         ctx.fillStyle = jacketOpt.color;
@@ -2175,6 +2226,36 @@ const AvatarRenderer = {
         ctx.beginPath();
         ctx.arc(32, 123, 5, 0, Math.PI * 2);
         ctx.fill();
+
+        // Scarf accessory (behind head, over jacket)
+        if (accOpt.id === 'scarf') {
+            ctx.fillStyle = accOpt.color;
+            ctx.beginPath();
+            ctx.roundRect(-12, 66, 24, 12, 3);
+            ctx.fill();
+            // Trailing end
+            ctx.beginPath();
+            ctx.moveTo(10, 72);
+            ctx.bezierCurveTo(16, 80, 14, 95, 18, 105);
+            ctx.lineTo(12, 105);
+            ctx.bezierCurveTo(10, 92, 12, 80, 8, 74);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Necklace accessory
+        if (accOpt.id === 'necklace') {
+            ctx.strokeStyle = accOpt.color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 74, 10, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.stroke();
+            // Pendant
+            ctx.fillStyle = accOpt.color;
+            ctx.beginPath();
+            ctx.arc(0, 84, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         // Neck
         ctx.fillStyle = skin;
@@ -2202,8 +2283,48 @@ const AvatarRenderer = {
         ctx.arc(0, 54, 5, 0.1 * Math.PI, 0.9 * Math.PI);
         ctx.stroke();
 
-        // Hair
-        if (hairOpt.color) {
+        // Sunglasses accessory
+        if (accOpt.id === 'sunglasses') {
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            // Left lens
+            ctx.beginPath();
+            ctx.roundRect(-13, 42, 11, 8, 2);
+            ctx.fill();
+            // Right lens
+            ctx.beginPath();
+            ctx.roundRect(2, 42, 11, 8, 2);
+            ctx.fill();
+            // Bridge
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-2, 46);
+            ctx.lineTo(2, 46);
+            ctx.stroke();
+            // Arms
+            ctx.beginPath();
+            ctx.moveTo(-13, 44);
+            ctx.lineTo(-22, 43);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(13, 44);
+            ctx.lineTo(22, 43);
+            ctx.stroke();
+        }
+
+        // Earrings accessory
+        if (accOpt.id === 'earrings') {
+            ctx.fillStyle = accOpt.color;
+            ctx.beginPath();
+            ctx.arc(-22, 54, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(22, 54, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Hair (short styles)
+        if (hairOpt.color && !hairOpt.long) {
             ctx.fillStyle = hairOpt.color;
             ctx.beginPath();
             ctx.arc(0, 38, 22, Math.PI, 2 * Math.PI);
@@ -2213,6 +2334,24 @@ const AvatarRenderer = {
             ctx.fillRect(16, 32, 6, 18);
         }
 
+        // Hair (long styles) — top/fringe part (drawn over head)
+        if (hairOpt.long && hairOpt.color) {
+            ctx.fillStyle = hairOpt.color;
+            // Top of head
+            ctx.beginPath();
+            ctx.arc(0, 38, 23, Math.PI, 2 * Math.PI);
+            ctx.fill();
+            // Fringe / bangs
+            ctx.beginPath();
+            ctx.moveTo(-20, 35);
+            ctx.bezierCurveTo(-16, 42, -8, 44, 0, 40);
+            ctx.bezierCurveTo(8, 44, 16, 42, 20, 35);
+            ctx.lineTo(22, 30);
+            ctx.arc(0, 30, 22, 0, Math.PI, true);
+            ctx.closePath();
+            ctx.fill();
+        }
+
         // Hat
         if (hatOpt.color) {
             ctx.fillStyle = hatOpt.color;
@@ -2220,7 +2359,6 @@ const AvatarRenderer = {
                 ctx.beginPath();
                 ctx.arc(0, 30, 22, Math.PI, 2 * Math.PI);
                 ctx.fill();
-                // Brim
                 ctx.fillRect(-8, 28, 32, 5);
             } else if (hatOpt.id === 'bucket') {
                 ctx.beginPath();
@@ -2235,7 +2373,6 @@ const AvatarRenderer = {
                 ctx.arc(0, 30, 23, Math.PI, 2 * Math.PI);
                 ctx.fill();
                 ctx.fillRect(-23, 27, 46, 6);
-                // Pompom
                 ctx.beginPath();
                 ctx.arc(0, 10, 6, 0, Math.PI * 2);
                 ctx.fill();
@@ -2243,13 +2380,45 @@ const AvatarRenderer = {
                 ctx.beginPath();
                 ctx.arc(0, 28, 20, Math.PI, 2 * Math.PI);
                 ctx.fill();
-                // Wide brim
                 ctx.fillRect(-32, 28, 64, 5);
             } else if (hatOpt.id === 'gold_cap') {
                 ctx.beginPath();
                 ctx.arc(0, 30, 22, Math.PI, 2 * Math.PI);
                 ctx.fill();
                 ctx.fillRect(-8, 28, 32, 5);
+            } else if (hatOpt.id === 'sunhat') {
+                // Wide floppy sun hat
+                ctx.beginPath();
+                ctx.arc(0, 28, 18, Math.PI, 2 * Math.PI);
+                ctx.fill();
+                // Wide brim
+                ctx.beginPath();
+                ctx.ellipse(0, 30, 34, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Ribbon
+                ctx.fillStyle = '#E891B2';
+                ctx.fillRect(-18, 24, 36, 4);
+            } else if (hatOpt.id === 'bow') {
+                // Hair bow on top
+                ctx.beginPath();
+                ctx.moveTo(0, 22);
+                ctx.bezierCurveTo(-14, 14, -16, 28, 0, 22);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(0, 22);
+                ctx.bezierCurveTo(14, 14, 16, 28, 0, 22);
+                ctx.fill();
+                // Center knot
+                ctx.beginPath();
+                ctx.arc(0, 22, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (hatOpt.id === 'headband') {
+                // Headband across top of head
+                ctx.fillRect(-22, 30, 44, 4);
+                // Small side accent
+                ctx.beginPath();
+                ctx.arc(18, 32, 4, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
 
@@ -2261,6 +2430,18 @@ const AvatarRenderer = {
             ctx.strokeRect(3, 95, 12, 10);
         }
 
+        // Puffer jacket quilting
+        if (av.jacket === 'puffer') {
+            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 1;
+            for (let py = 82; py < 130; py += 10) {
+                ctx.beginPath();
+                ctx.moveTo(-18, py);
+                ctx.lineTo(18, py);
+                ctx.stroke();
+            }
+        }
+
         ctx.restore();
     }
 };
@@ -2270,7 +2451,7 @@ const AvatarEditor = {
     init() {
         // Migrate avatar for existing saves
         if (!Save.data.avatar) {
-            Save.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
+            Save.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans', accessory: 'none' };
             Save.save();
         }
 
@@ -2282,7 +2463,8 @@ const AvatarEditor = {
             { key: 'hair', label: 'Hår' },
             { key: 'hat', label: 'Hodeplagg' },
             { key: 'jacket', label: 'Overdel' },
-            { key: 'pants', label: 'Underdel' }
+            { key: 'pants', label: 'Underdel' },
+            { key: 'accessory', label: 'Tilbehør' }
         ];
 
         categories.forEach(cat => {
