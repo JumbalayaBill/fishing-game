@@ -227,6 +227,59 @@ const SFX = {
         o.stop(t + 0.25);
     },
 
+    treasureChest() {
+        const notes = [523, 659, 784, 1047, 1319]; // C5-E5-G5-C6-E6
+        const t = this.ctx.currentTime;
+        notes.forEach((freq, i) => {
+            const o = this.ctx.createOscillator();
+            const g = this.ctx.createGain();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            o.connect(g);
+            g.connect(this.ctx.destination);
+            g.gain.setValueAtTime(0.12, t + i * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.3);
+            o.start(t + i * 0.1);
+            o.stop(t + i * 0.1 + 0.3);
+        });
+    },
+
+    explosion() {
+        const t = this.ctx.currentTime;
+        // Low rumble
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(80, t);
+        o.frequency.exponentialRampToValueAtTime(30, t + 0.5);
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        o.start(t);
+        o.stop(t + 0.5);
+        // Noise burst
+        this._noise(0.4, 0.2);
+    },
+
+    creatureSteal() {
+        const t = this.ctx.currentTime;
+        // Descending ominous tone
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(400, t);
+        o.frequency.exponentialRampToValueAtTime(100, t + 0.6);
+        o.connect(g);
+        g.connect(this.ctx.destination);
+        g.gain.setValueAtTime(0.12, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+        o.start(t);
+        o.stop(t + 0.6);
+        // Splash
+        setTimeout(() => this._noise(0.25, 0.12), 200);
+    },
+
     uiClick() {
         this._osc('sine', 600, 0.06, 0.06);
     },
@@ -2741,6 +2794,9 @@ const Game = {
         this.dayCatches = [];
         this.daySpecies = new Set();
         this.dayPoints = 0;
+        this.activeEvent = null;
+        this.pendingCreatureEvent = null;
+        this.dayEvents = [];
         this.phase = 'idle';
 
         // Set random weather
@@ -2797,7 +2853,11 @@ const Game = {
                     const gear = this.getGear();
                     this.biteTimer = gear.hook.biteWindow;
                     SFX.play('biteBeep');
-                    UI.setPrompt('NAPP! Trykk MELLOMROM nå!', true);
+                    if (this.activeEvent) {
+                        UI.setPrompt('Noe på kroken! Trykk MELLOMROM!', true);
+                    } else {
+                        UI.setPrompt('NAPP! Trykk MELLOMROM nå!', true);
+                    }
                 } else {
                     // No bite, wait more
                     this.waitTimer = 1500 + Math.random() * 2500;
@@ -2809,6 +2869,7 @@ const Game = {
             this.biteTimer -= 16;
             if (this.biteTimer <= 0) {
                 // Missed the bite
+                this.activeEvent = null;
                 this.phase = 'idle';
                 this.castsLeft--;
                 this.updateHUD();
@@ -2925,11 +2986,176 @@ const Game = {
 
         // Roll
         if (Math.random() < chance) {
+            // Check for rare item event before selecting fish
+            const itemEvent = this.rollForItemEvent();
+            if (itemEvent) {
+                this.activeEvent = itemEvent;
+                return true;
+            }
             // Determine which fish
             this.selectFish();
             return this.activeFish !== null;
         }
         return false;
+    },
+
+    rollForItemEvent() {
+        const loc = LOCATIONS.find(l => l.id === this.selectedLocation);
+        if (!loc) return null;
+        for (const item of RARE_EVENTS.items) {
+            if (!item.locations.includes(loc.id)) continue;
+            if (Math.random() < item.probability) return item;
+        }
+        return null;
+    },
+
+    rollForCreatureEvent() {
+        const loc = LOCATIONS.find(l => l.id === this.selectedLocation);
+        if (!loc) return null;
+        for (const creature of RARE_EVENTS.creatures) {
+            if (!creature.locations.includes(loc.id)) continue;
+            if (Math.random() < creature.probability) return creature;
+        }
+        return null;
+    },
+
+    itemCaught() {
+        const event = this.activeEvent;
+        this.activeEvent = null;
+        this.phase = 'idle';
+        this.castsLeft--;
+
+        // Determine mine flavor text before resetting
+        const mineIsEmpty = event.id === 'mine' && this.dayCatches.length === 0 && this.dayCoins === 0;
+
+        // Apply item effect
+        if (event.id === 'treasure') {
+            Save.data.coins += event.coinReward;
+            Save.data.totalCoins += event.coinReward;
+            this.dayCoins += event.coinReward;
+            Save.save();
+        } else if (event.id === 'mine') {
+            // Reset day's coins and catches
+            Save.data.coins -= this.dayCoins;
+            Save.data.totalCoins -= this.dayCoins;
+            Save.data.totalCatches -= this.dayCatches.length;
+            Save.data.totalPoints -= this.dayPoints;
+            for (const c of this.dayCatches) {
+                Save.data.totalWeight -= c.weight;
+            }
+            // Undo species data
+            for (const c of this.dayCatches) {
+                const sp = Save.data.caughtSpecies[c.fish.id];
+                if (sp) {
+                    sp.count--;
+                    if (sp.count <= 0) delete Save.data.caughtSpecies[c.fish.id];
+                }
+            }
+            Save.save();
+            this.dayCoins = 0;
+            this.dayCatches = [];
+            this.daySpecies = new Set();
+            this.dayPoints = 0;
+        }
+        // Boot: no effect
+
+        this.dayEvents.push(event);
+        this.updateHUD();
+        SFX.play(event.sound);
+        this.showEventOverlay(event, mineIsEmpty);
+    },
+
+    showEventOverlay(event, mineIsEmpty) {
+        document.getElementById('event-icon').textContent = event.emoji;
+        const titleEl = document.getElementById('event-title');
+        titleEl.textContent = event.titleText;
+        titleEl.className = '';
+        if (event.category === 'treasure') titleEl.classList.add('treasure-title');
+        if (event.category === 'hazard') titleEl.classList.add('hazard-title');
+
+        let description = event.flavorText;
+        if (event.id === 'mine' && mineIsEmpty) {
+            description = event.flavorTextEmpty;
+        }
+        document.getElementById('event-description').textContent = description;
+
+        const coinsEl = document.getElementById('event-coins');
+        if (event.coinReward > 0) {
+            coinsEl.style.display = 'block';
+            coinsEl.textContent = `+${event.coinReward} mynter!`;
+        } else {
+            coinsEl.style.display = 'none';
+        }
+
+        UI.showOverlay('overlay-event');
+    },
+
+    closeEventOverlay() {
+        UI.hideOverlay('overlay-event');
+        if (this.castsLeft <= 0) {
+            this.endDay();
+        } else {
+            UI.setPrompt('Trykk MELLOMROM for å kaste igjen', true);
+        }
+    },
+
+    creatureSteals(creature, fish, weight, length, points, coins, isNew) {
+        UI.hideOverlay('overlay-catch');
+
+        // Reverse all rewards from this catch
+        Save.data.coins -= coins;
+        Save.data.totalCoins -= coins;
+        Save.data.totalCatches--;
+        Save.data.totalPoints -= points;
+        Save.data.totalWeight -= weight;
+
+        // Undo species data
+        const sp = Save.data.caughtSpecies[fish.id];
+        if (sp) {
+            sp.count--;
+            if (sp.count <= 0) delete Save.data.caughtSpecies[fish.id];
+        }
+
+        // Undo highscores.biggestCatch (remove the entry we just added)
+        const bcIdx = Save.data.highscores.biggestCatch.findIndex(
+            e => e.name === fish.name && e.weight === weight && e.points === points
+        );
+        if (bcIdx !== -1) Save.data.highscores.biggestCatch.splice(bcIdx, 1);
+
+        Save.save();
+
+        // Undo day tracking
+        this.dayCoins -= coins;
+        this.dayPoints -= points;
+        this.daySpecies.delete(fish.id);
+        // Re-add species if caught earlier in the day
+        for (const c of this.dayCatches) {
+            if (c.fish.id === fish.id) this.daySpecies.add(fish.id);
+        }
+        this.dayCatches.pop(); // Remove the last catch
+
+        this.dayEvents.push(creature);
+        this.updateHUD();
+
+        SFX.play(creature.sound);
+        this.showCreatureOverlay(creature, fish);
+    },
+
+    showCreatureOverlay(creature, fish) {
+        document.getElementById('creature-emoji').textContent = creature.emoji;
+        document.getElementById('creature-title').textContent = creature.titleText;
+        document.getElementById('creature-description').textContent = creature.flavorText;
+        document.getElementById('creature-stolen').textContent = `${fish.name} ble stjålet! Alle belønninger er tapt.`;
+        UI.showOverlay('overlay-creature');
+    },
+
+    closeCreatureOverlay() {
+        UI.hideOverlay('overlay-creature');
+        if (this.castsLeft <= 0) {
+            this.endDay();
+        } else {
+            UI.setPrompt('Trykk MELLOMROM for å kaste igjen', true);
+        }
     },
 
     selectFish() {
@@ -3063,6 +3289,17 @@ const Game = {
         Save.data.highscores.biggestCatch = Save.data.highscores.biggestCatch.slice(0, 20);
         Save.save();
 
+        // Check for creature event before showing result
+        const creatureEvent = this.rollForCreatureEvent();
+        if (creatureEvent) {
+            // Show catch briefly, then creature steals it
+            this.showCatchResult(fish, weight, length, points, coins, isNew);
+            setTimeout(() => {
+                this.creatureSteals(creatureEvent, fish, weight, length, points, coins, isNew);
+            }, 1200);
+            return;
+        }
+
         // Show catch overlay
         this.showCatchResult(fish, weight, length, points, coins, isNew);
     },
@@ -3191,6 +3428,14 @@ const Game = {
             catchesDiv.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px;">Ingen fisk fanget i dag. Prøv annet agn eller sted!</p>';
         }
 
+        // Show rare events in summary
+        if (this.dayEvents.length > 0) {
+            const eventsHtml = '<div class="summary-events"><h3>Hendelser</h3>' +
+                this.dayEvents.map(e => `<div class="summary-event-item"><span>${e.emoji} ${e.name}</span><span>${e.description}</span></div>`).join('') +
+                '</div>';
+            catchesDiv.innerHTML += eventsHtml;
+        }
+
         UI.showOverlay('overlay-summary');
     },
 
@@ -3255,7 +3500,11 @@ const Game = {
 
             UI.setPrompt('Venter på napp...', true);
         } else if (this.phase === 'bite') {
-            this.startFight();
+            if (this.activeEvent) {
+                this.itemCaught();
+            } else {
+                this.startFight();
+            }
         }
     },
 

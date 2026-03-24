@@ -639,6 +639,69 @@ const AVATAR_OPTIONS = {
     ]
 };
 
+const RARE_EVENTS = {
+    items: [
+        {
+            id: 'treasure',
+            name: 'Skattkiste',
+            icon: '💰',
+            emoji: '💰',
+            description: 'En gammel skattkiste dukket opp fra dypet!',
+            probability: 0.008,
+            locations: ['lake', 'river', 'fjord', 'ocean'],
+            sound: 'treasureChest',
+            titleText: 'Skattkiste!',
+            flavorText: 'Du dro opp en gammel kiste full av gullmynter!',
+            coinReward: 200,
+            category: 'treasure'
+        },
+        {
+            id: 'boot',
+            name: 'Gammel støvel',
+            icon: '🥾',
+            emoji: '🥾',
+            description: 'En sliten gammel støvel hang på kroken.',
+            probability: 0.025,
+            locations: ['lake', 'river', 'fjord', 'ocean'],
+            sound: 'sadTrombone',
+            titleText: 'Gammel støvel!',
+            flavorText: 'Noen har mistet en støvel her... lukter fisk.',
+            coinReward: 0,
+            category: 'junk'
+        },
+        {
+            id: 'mine',
+            name: 'Sjømine',
+            icon: '💣',
+            emoji: '💣',
+            description: 'En gammel sjømine fra krigen!',
+            probability: 0.005,
+            locations: ['fjord', 'ocean'],
+            sound: 'explosion',
+            titleText: 'SJØMINE!',
+            flavorText: 'BOOM! Eksplosjonen skremte bort all fisk og mynter!',
+            flavorTextEmpty: 'Heldigvis hadde du ikke fanget noe ennå!',
+            coinReward: 0,
+            category: 'hazard'
+        }
+    ],
+    creatures: [
+        {
+            id: 'octopus',
+            name: 'Kjempeblekksprut',
+            icon: '🐙',
+            emoji: '🐙',
+            description: 'En kjempeblekksprut dukket opp og stjal fangsten!',
+            //probability: 0.04,
+            probability: 0.9,
+            locations: ['fjord', 'ocean'],
+            sound: 'creatureSteal',
+            titleText: 'Kjempeblekksprut!',
+            flavorText: 'En tentakkel skjøt opp fra dypet og rev fisken av kroken!'
+        }
+    ]
+};
+
 const DEFAULT_SAVE = {
     coins: 0,
     totalCoins: 0,

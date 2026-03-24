@@ -141,6 +141,28 @@
         </div>
     </div>
 
+    <!-- HENDELSE-OVERLAY (rare item events) -->
+    <div id="overlay-event" class="overlay">
+        <div class="event-card">
+            <div class="event-icon" id="event-icon"></div>
+            <h2 id="event-title"></h2>
+            <p class="event-description" id="event-description"></p>
+            <div class="event-coins" id="event-coins" style="display:none"></div>
+            <button class="btn btn-primary" onclick="Game.closeEventOverlay()">Fortsett</button>
+        </div>
+    </div>
+
+    <!-- SKAPNING-OVERLAY (creature steal events) -->
+    <div id="overlay-creature" class="overlay">
+        <div class="creature-card">
+            <div class="creature-emoji" id="creature-emoji"></div>
+            <h2 id="creature-title"></h2>
+            <p class="creature-description" id="creature-description"></p>
+            <div class="creature-stolen" id="creature-stolen"></div>
+            <button class="btn btn-primary" onclick="Game.closeCreatureOverlay()">Fortsett</button>
+        </div>
+    </div>
+
     <!-- RØMTE-OVERLAY -->
     <div id="overlay-escape" class="overlay">
         <div class="escape-card">

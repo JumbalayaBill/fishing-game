@@ -494,6 +494,107 @@ body {
     margin-top: 20px;
 }
 
+/* Event card (rare item events) */
+.event-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 30px 40px;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.4s ease-out;
+}
+.event-icon {
+    font-size: 64px;
+    margin-bottom: 12px;
+}
+.event-card h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+.event-card h2.treasure-title { color: var(--gold); }
+.event-card h2.hazard-title { color: var(--danger); }
+.event-description {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.event-coins {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 16px;
+}
+.event-card .btn { margin-top: 8px; }
+
+/* Creature card (creature steal events) */
+.creature-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 30px 40px;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.4s ease-out;
+}
+.creature-emoji {
+    font-size: 72px;
+    margin-bottom: 12px;
+    animation: creatureShake 0.5s ease-in-out;
+}
+@keyframes creatureShake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    20% { transform: translateX(-8px) rotate(-5deg); }
+    40% { transform: translateX(8px) rotate(5deg); }
+    60% { transform: translateX(-4px) rotate(-3deg); }
+    80% { transform: translateX(4px) rotate(3deg); }
+}
+.creature-card h2 {
+    font-size: 22px;
+    color: var(--danger);
+    margin-bottom: 10px;
+}
+.creature-description {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+.creature-stolen {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--danger);
+    margin-bottom: 16px;
+}
+.creature-card .btn { margin-top: 8px; }
+
+/* Day summary event list */
+.summary-events {
+    text-align: left;
+    margin: 12px 0;
+}
+.summary-events h3 {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.summary-event-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--radius);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
 /* ===== COLLECTION SCREEN ===== */
 .collection-container {
     max-width: 800px;
@@ -1346,7 +1447,7 @@ body {
     .option-grid { grid-template-columns: repeat(2, 1fr); }
     .collection-grid { grid-template-columns: repeat(2, 1fr); }
     .summary-stats { grid-template-columns: 1fr; }
-    .catch-card, .escape-card, .summary-card { padding: 20px; }
+    .catch-card, .escape-card, .summary-card, .event-card, .creature-card { padding: 20px; }
     .fishing-hud { font-size: 12px; }
     .setup-container, .collection-container, .highscores-container, .shop-container, .guide-container, .stats-container { padding: 16px; }
     .stats-grid { grid-template-columns: 1fr; }
