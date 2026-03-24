@@ -1483,7 +1483,8 @@ const Scene = {
             }
         }
 
-        // Avatar on shore
+        // Shoreline and avatar
+        this.drawShoreline(ctx, w, h, waterLine, loc, timeOfDay);
         this.drawAvatar(ctx, w, h, waterLine);
 
         // Game elements based on state
@@ -1640,6 +1641,93 @@ const Scene = {
                 ctx.stroke();
             }
         }
+    },
+
+    drawShoreline(ctx, w, h, wl, loc, tod) {
+        // Earth/ground on the left side where the fisherman stands
+        // Slopes from bottom-left up to the waterline, creating a natural bank
+
+        const bankRight = w * 0.22; // how far the shore extends right
+        const bankTop = wl - 8;     // shore starts just above waterline
+
+        // Ground color based on time of day
+        let groundColor = '#5A4A32';
+        let groundDark = '#3E3222';
+        let grassColor = '#4A6B2A';
+        if (tod.id === 'night') {
+            groundColor = '#2E2518';
+            groundDark = '#1E1810';
+            grassColor = '#2A3D16';
+        } else if (tod.id === 'dusk') {
+            groundColor = '#4A3A28';
+            groundDark = '#352A1C';
+            grassColor = '#3D5522';
+        }
+
+        // Main shore shape — curves from bottom-left to waterline
+        ctx.fillStyle = groundColor;
+        ctx.beginPath();
+        ctx.moveTo(0, h);                          // bottom-left
+        ctx.lineTo(0, bankTop);                     // up the left edge
+        ctx.bezierCurveTo(
+            bankRight * 0.3, bankTop - 4,           // slight rise
+            bankRight * 0.7, bankTop + 2,           // gentle curve
+            bankRight, wl + 15                      // meets water at an angle
+        );
+        ctx.bezierCurveTo(
+            bankRight + w * 0.04, wl + 30,          // continues sloping into water
+            bankRight + w * 0.06, h * 0.7,
+            w * 0.05, h                             // bottom edge
+        );
+        ctx.closePath();
+        ctx.fill();
+
+        // Darker edge along the waterline (wet dirt)
+        ctx.fillStyle = groundDark;
+        ctx.beginPath();
+        ctx.moveTo(0, wl + 2);
+        ctx.bezierCurveTo(
+            bankRight * 0.4, wl,
+            bankRight * 0.8, wl + 8,
+            bankRight, wl + 15
+        );
+        ctx.bezierCurveTo(
+            bankRight + w * 0.03, wl + 25,
+            bankRight + w * 0.04, wl + 35,
+            w * 0.04, h * 0.72
+        );
+        ctx.lineTo(0, h * 0.72);
+        ctx.closePath();
+        ctx.fill();
+
+        // Grass tufts along the top edge
+        ctx.fillStyle = grassColor;
+        for (let gx = 2; gx < bankRight - 5; gx += 8 + Math.sin(gx) * 3) {
+            const gy = bankTop - 2 + Math.sin(gx * 0.5) * 3;
+            ctx.beginPath();
+            ctx.moveTo(gx, gy);
+            ctx.lineTo(gx - 3, gy - 7 - Math.random() * 4);
+            ctx.lineTo(gx + 1, gy - 3);
+            ctx.lineTo(gx + 4, gy - 8 - Math.random() * 3);
+            ctx.lineTo(gx + 6, gy);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Small pebbles/rocks near waterline
+        ctx.fillStyle = '#7A7060';
+        const pebbles = [
+            [bankRight * 0.6, wl + 4, 3],
+            [bankRight * 0.8, wl + 10, 2.5],
+            [bankRight * 0.4, wl + 1, 2],
+            [bankRight * 0.9, wl + 16, 2],
+            [bankRight * 0.2, wl + 2, 1.5]
+        ];
+        pebbles.forEach(([px, py, pr]) => {
+            ctx.beginPath();
+            ctx.ellipse(px, py, pr * 1.3, pr, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+        });
     },
 
     drawAvatar(ctx, w, h, wl) {
