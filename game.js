@@ -2039,15 +2039,59 @@ const Scene = {
         ctx.textAlign = 'start';
     },
 
+    _initRain(count) {
+        if (this._rainDrops && this._rainDrops.length === count) return;
+        this._rainDrops = [];
+        for (let i = 0; i < count; i++) {
+            this._rainDrops.push({
+                x: Math.random(),
+                y: Math.random(),
+                speed: 0.6 + Math.random() * 0.4,
+                len: 0.8 + Math.random() * 0.5
+            });
+        }
+        // Gentle wind that slowly shifts direction
+        this._rainWind = (Math.random() - 0.5) * 0.6;
+        this._rainWindTarget = this._rainWind;
+        this._rainWindTimer = 0;
+    },
+
+    _updateWind(dt) {
+        this._rainWindTimer -= dt;
+        if (this._rainWindTimer <= 0) {
+            this._rainWindTarget = (Math.random() - 0.5) * 0.8;
+            this._rainWindTimer = 2 + Math.random() * 4;
+        }
+        this._rainWind += (this._rainWindTarget - this._rainWind) * 0.02;
+    },
+
     drawRain(ctx, w, h) {
-        ctx.strokeStyle = 'rgba(180, 200, 230, 0.4)';
+        this._initRain(100);
+        this._updateWind(0.016);
+        const wind = this._rainWind;
+
         ctx.lineWidth = 1;
-        for (let i = 0; i < 80; i++) {
-            const x = (i * 13.7 + this.time * 120) % w;
-            const y = (i * 17.3 + this.time * 300) % h;
+        for (const drop of this._rainDrops) {
+            // Move drop
+            drop.y += drop.speed * 0.018;
+            drop.x += wind * 0.005 * drop.speed;
+
+            // Wrap around
+            if (drop.y > 1.05) { drop.y = -0.05; drop.x = Math.random(); }
+            if (drop.x > 1.1) drop.x = -0.1;
+            if (drop.x < -0.1) drop.x = 1.1;
+
+            const px = drop.x * w;
+            const py = drop.y * h;
+            const len = 10 * drop.len;
+            const dx = wind * 3;
+
+            // Varying opacity for depth
+            const alpha = 0.15 + drop.speed * 0.25;
+            ctx.strokeStyle = `rgba(180, 210, 240, ${alpha})`;
             ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - 3, y + 12);
+            ctx.moveTo(px, py);
+            ctx.lineTo(px + dx, py + len);
             ctx.stroke();
         }
     },
@@ -2074,16 +2118,33 @@ const Scene = {
     },
 
     drawHeavyRain(ctx, w, h) {
-        ctx.strokeStyle = 'rgba(180, 200, 230, 0.5)';
+        this._initRain(200);
+        this._updateWind(0.016);
+        // Storm has stronger, more consistent wind
+        const wind = this._rainWind + (this._rainWind > 0 ? 0.5 : -0.5);
+
         ctx.lineWidth = 1.5;
-        for (let i = 0; i < 160; i++) {
-            const x = (i * 7.3 + this.time * 180) % w;
-            const y = (i * 11.7 + this.time * 500) % h;
+        for (const drop of this._rainDrops) {
+            drop.y += drop.speed * 0.024;
+            drop.x += wind * 0.007 * drop.speed;
+
+            if (drop.y > 1.05) { drop.y = -0.05; drop.x = Math.random(); }
+            if (drop.x > 1.1) drop.x = -0.1;
+            if (drop.x < -0.1) drop.x = 1.1;
+
+            const px = drop.x * w;
+            const py = drop.y * h;
+            const len = 16 * drop.len;
+            const dx = wind * 5;
+
+            const alpha = 0.2 + drop.speed * 0.3;
+            ctx.strokeStyle = `rgba(180, 210, 240, ${alpha})`;
             ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - 4, y + 18);
+            ctx.moveTo(px, py);
+            ctx.lineTo(px + dx, py + len);
             ctx.stroke();
         }
+
         // Darken overlay for storm
         ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.fillRect(0, 0, w, h);
@@ -2779,9 +2840,9 @@ const Game = {
             // Tension dynamics
             const pullForce = this.fishPullStrength * 0.008;
             const reelForce = this.reeling ? 0.007 : 0;
-            // Decay is the "cool-down" — reel quality makes this much faster
+            // Decay only applies when NOT reeling — reel quality makes recovery faster
             const baseDecay = 0.004;
-            const decay = baseDecay * gear.reel.tensionDecay;
+            const decay = this.reeling ? 0 : baseDecay * gear.reel.tensionDecay;
 
             this.tension += pullForce + reelForce - decay;
 
