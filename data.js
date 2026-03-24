@@ -693,7 +693,7 @@ const RARE_EVENTS = {
             emoji: '🐙',
             description: 'En kjempeblekksprut dukket opp og stjal fangsten!',
             //probability: 0.04,
-            probability: 0.9,
+            probability: 0.04,
             locations: ['fjord', 'ocean'],
             sound: 'creatureSteal',
             titleText: 'Kjempeblekksprut!',
