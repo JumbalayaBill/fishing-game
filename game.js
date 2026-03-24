@@ -35,6 +35,7 @@ const Save = {
         if (!this.data.locationHistory) this.data.locationHistory = {};
         if (this.data.soundEnabled === undefined) this.data.soundEnabled = true;
         if (this.data.dailyChallengeCompleted === undefined) this.data.dailyChallengeCompleted = null;
+        if (!this.data.avatar) this.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
     },
     save() {
         localStorage.setItem('artsfisker_save', JSON.stringify(this.data));
@@ -1481,6 +1482,9 @@ const Scene = {
             }
         }
 
+        // Avatar on shore
+        this.drawAvatar(ctx, w, h, waterLine);
+
         // Game elements based on state
         if (state.phase === 'idle') {
             this.drawRodIdle(ctx, w, h, waterLine);
@@ -1637,13 +1641,39 @@ const Scene = {
         }
     },
 
+    drawAvatar(ctx, w, h, wl) {
+        const avatarH = Math.min(h * 0.35, 100);
+        const avatarW = avatarH * 0.6;
+        const ax = w * 0.08;
+        const ay = h * 0.92 - avatarH;
+
+        // Cache avatar rendering
+        const avKey = JSON.stringify(Save.data.avatar);
+        if (!this._avatarCache || this._avatarCacheKey !== avKey || this._avatarCacheH !== Math.ceil(avatarH)) {
+            const offscreen = document.createElement('canvas');
+            offscreen.width = Math.ceil(avatarW);
+            offscreen.height = Math.ceil(avatarH);
+            AvatarRenderer.draw(offscreen.getContext('2d'), offscreen.width, offscreen.height, Save.data.avatar);
+            this._avatarCache = offscreen;
+            this._avatarCacheKey = avKey;
+            this._avatarCacheH = Math.ceil(avatarH);
+        }
+        ctx.drawImage(this._avatarCache, ax - avatarW / 2, ay);
+    },
+
+    _getRodColors() {
+        const gear = Game.getGear();
+        return { rod: gear.rod.color || '#5D4E37', handle: gear.rod.handleColor || '#3A2F1E', reel: gear.rod.reelColor || '#888' };
+    },
+
     drawRodIdle(ctx, w, h, wl) {
         const baseX = w * 0.15;
         const baseY = h * 0.92;
         const tipX = w * 0.35;
         const tipY = wl - 10;
+        const colors = this._getRodColors();
 
-        ctx.strokeStyle = '#5D4E37';
+        ctx.strokeStyle = colors.rod;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
@@ -1651,7 +1681,7 @@ const Scene = {
         ctx.stroke();
 
         // Rod handle
-        ctx.strokeStyle = '#3A2F1E';
+        ctx.strokeStyle = colors.handle;
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
@@ -1659,7 +1689,7 @@ const Scene = {
         ctx.stroke();
 
         // Reel
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = colors.reel;
         ctx.beginPath();
         ctx.arc(baseX + 8, baseY - 12, 6, 0, Math.PI * 2);
         ctx.fill();
@@ -1672,7 +1702,7 @@ const Scene = {
         const tipX = baseX + Math.cos(angle) * 200;
         const tipY = baseY + Math.sin(angle) * 200;
 
-        ctx.strokeStyle = '#5D4E37';
+        ctx.strokeStyle = this._getRodColors().rod;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
@@ -1686,7 +1716,7 @@ const Scene = {
         const tipX = w * 0.3;
         const tipY = wl - 20;
 
-        ctx.strokeStyle = '#5D4E37';
+        ctx.strokeStyle = this._getRodColors().rod;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
@@ -1701,7 +1731,7 @@ const Scene = {
         const tipX = w * 0.28;
         const tipY = wl + 10;
 
-        ctx.strokeStyle = '#5D4E37';
+        ctx.strokeStyle = this._getRodColors().rod;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
@@ -1742,9 +1772,10 @@ const Scene = {
         const tipY = wl - 20;
         const bobX = w * 0.15 + dist * w * 0.007;
         const bobY = wl + Math.sin(this.time * 2) * 3;
+        const gear = Game.getGear();
 
-        ctx.strokeStyle = 'rgba(200,200,200,0.5)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = gear.line.lineColor || 'rgba(200,200,200,0.5)';
+        ctx.lineWidth = gear.line.lineWidth || 1;
         ctx.beginPath();
         ctx.moveTo(tipX, tipY);
         ctx.quadraticCurveTo((tipX + bobX) / 2, wl - 5, bobX, bobY);
@@ -1786,8 +1817,13 @@ const Scene = {
         // Line from rod to fish
         const tipX = w * 0.28;
         const tipY = wl + 10;
-        ctx.strokeStyle = `rgba(200,200,200,${0.3 + state.tension * 0.7})`;
-        ctx.lineWidth = 1.5;
+        const lineGear = Game.getGear().line;
+        const baseAlpha = 0.3 + state.tension * 0.7;
+        // Use gear line color with tension-based alpha
+        const lc = lineGear.lineColor || 'rgba(200,200,200,0.5)';
+        const lcMatch = lc.match(/rgba?\((\d+),(\d+),(\d+)/);
+        ctx.strokeStyle = lcMatch ? `rgba(${lcMatch[1]},${lcMatch[2]},${lcMatch[3]},${baseAlpha})` : lc;
+        ctx.lineWidth = lineGear.lineWidth || 1.5;
         ctx.beginPath();
         ctx.moveTo(tipX, tipY);
         ctx.quadraticCurveTo(fishX, wl + 5, fishX, fishY);
@@ -2081,6 +2117,211 @@ const Scene = {
             ctx.fill();
             return true;
         });
+    }
+};
+
+// --- Avatar Renderer ---
+const AvatarRenderer = {
+    draw(ctx, w, h, avatarData) {
+        const av = avatarData || (Save.data && Save.data.avatar) || { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
+
+        const skin = (AVATAR_OPTIONS.skinTone.find(s => s.id === av.skinTone) || AVATAR_OPTIONS.skinTone[0]).color;
+        const hairOpt = AVATAR_OPTIONS.hair.find(h => h.id === av.hair) || AVATAR_OPTIONS.hair[1];
+        const hatOpt = AVATAR_OPTIONS.hat.find(h => h.id === av.hat) || AVATAR_OPTIONS.hat[0];
+        const jacketOpt = AVATAR_OPTIONS.jacket.find(j => j.id === av.jacket) || AVATAR_OPTIONS.jacket[0];
+        const pantsOpt = AVATAR_OPTIONS.pants.find(p => p.id === av.pants) || AVATAR_OPTIONS.pants[0];
+
+        const cx = w / 2;
+        const scale = h / 200;
+
+        ctx.save();
+        ctx.translate(cx, 0);
+        ctx.scale(scale, scale);
+
+        // Legs / pants
+        ctx.fillStyle = pantsOpt.color;
+        ctx.fillRect(-14, 130, 12, 45);
+        ctx.fillRect(2, 130, 12, 45);
+
+        // Shoes
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-16, 172, 16, 8);
+        ctx.fillRect(0, 172, 16, 8);
+
+        // Body / jacket
+        ctx.fillStyle = jacketOpt.color;
+        ctx.beginPath();
+        ctx.roundRect(-20, 75, 40, 58, 4);
+        ctx.fill();
+
+        // Arms
+        ctx.fillStyle = jacketOpt.color;
+        ctx.save();
+        ctx.translate(-20, 82);
+        ctx.rotate(-0.15);
+        ctx.fillRect(-10, 0, 10, 40);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(20, 82);
+        ctx.rotate(0.15);
+        ctx.fillRect(0, 0, 10, 40);
+        ctx.restore();
+
+        // Hands
+        ctx.fillStyle = skin;
+        ctx.beginPath();
+        ctx.arc(-32, 123, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(32, 123, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Neck
+        ctx.fillStyle = skin;
+        ctx.fillRect(-6, 65, 12, 14);
+
+        // Head
+        ctx.fillStyle = skin;
+        ctx.beginPath();
+        ctx.arc(0, 48, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = '#1A1A1A';
+        ctx.beginPath();
+        ctx.arc(-7, 46, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(7, 46, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mouth
+        ctx.strokeStyle = '#1A1A1A';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 54, 5, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+
+        // Hair
+        if (hairOpt.color) {
+            ctx.fillStyle = hairOpt.color;
+            ctx.beginPath();
+            ctx.arc(0, 38, 22, Math.PI, 2 * Math.PI);
+            ctx.fill();
+            // Side hair
+            ctx.fillRect(-22, 32, 6, 18);
+            ctx.fillRect(16, 32, 6, 18);
+        }
+
+        // Hat
+        if (hatOpt.color) {
+            ctx.fillStyle = hatOpt.color;
+            if (hatOpt.id === 'cap') {
+                ctx.beginPath();
+                ctx.arc(0, 30, 22, Math.PI, 2 * Math.PI);
+                ctx.fill();
+                // Brim
+                ctx.fillRect(-8, 28, 32, 5);
+            } else if (hatOpt.id === 'bucket') {
+                ctx.beginPath();
+                ctx.moveTo(-28, 33);
+                ctx.lineTo(-22, 12);
+                ctx.lineTo(22, 12);
+                ctx.lineTo(28, 33);
+                ctx.closePath();
+                ctx.fill();
+            } else if (hatOpt.id === 'beanie') {
+                ctx.beginPath();
+                ctx.arc(0, 30, 23, Math.PI, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillRect(-23, 27, 46, 6);
+                // Pompom
+                ctx.beginPath();
+                ctx.arc(0, 10, 6, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (hatOpt.id === 'cowboy') {
+                ctx.beginPath();
+                ctx.arc(0, 28, 20, Math.PI, 2 * Math.PI);
+                ctx.fill();
+                // Wide brim
+                ctx.fillRect(-32, 28, 64, 5);
+            } else if (hatOpt.id === 'gold_cap') {
+                ctx.beginPath();
+                ctx.arc(0, 30, 22, Math.PI, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillRect(-8, 28, 32, 5);
+            }
+        }
+
+        // Vest detail (pockets)
+        if (av.jacket === 'vest') {
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-15, 95, 12, 10);
+            ctx.strokeRect(3, 95, 12, 10);
+        }
+
+        ctx.restore();
+    }
+};
+
+// --- Avatar Editor ---
+const AvatarEditor = {
+    init() {
+        // Migrate avatar for existing saves
+        if (!Save.data.avatar) {
+            Save.data.avatar = { skinTone: 'light', hair: 'brown', hat: 'cap', jacket: 'vest', pants: 'jeans' };
+            Save.save();
+        }
+
+        const container = document.getElementById('avatar-sections');
+        container.innerHTML = '';
+
+        const categories = [
+            { key: 'skinTone', label: 'Hudtone' },
+            { key: 'hair', label: 'Hår' },
+            { key: 'hat', label: 'Hodeplagg' },
+            { key: 'jacket', label: 'Overdel' },
+            { key: 'pants', label: 'Underdel' }
+        ];
+
+        categories.forEach(cat => {
+            const section = document.createElement('div');
+            section.className = 'avatar-section';
+            section.innerHTML = `<h3>${cat.label}</h3>`;
+
+            const row = document.createElement('div');
+            row.className = 'avatar-option-row';
+
+            AVATAR_OPTIONS[cat.key].forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'avatar-option' + (Save.data.avatar[cat.key] === opt.id ? ' selected' : '');
+                btn.innerHTML = (opt.color ? `<span class="avatar-swatch" style="background:${opt.color}"></span>` : '') + opt.name;
+                btn.addEventListener('click', () => {
+                    Save.data.avatar[cat.key] = opt.id;
+                    Save.save();
+                    // Update selection highlight
+                    row.querySelectorAll('.avatar-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    this.updatePreview();
+                    SFX.init();
+                    SFX.play('uiClick');
+                });
+                row.appendChild(btn);
+            });
+
+            section.appendChild(row);
+            container.appendChild(section);
+        });
+
+        this.updatePreview();
+    },
+
+    updatePreview() {
+        const canvas = document.getElementById('avatar-preview-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        AvatarRenderer.draw(ctx, canvas.width, canvas.height, Save.data.avatar);
     }
 };
 

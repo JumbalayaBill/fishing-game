@@ -25,6 +25,7 @@
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-collection')">Min samling</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-stats')">Min profil</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-highscores')">Toppliste</button>
+            <button class="btn btn-secondary" onclick="UI.showScreen('screen-avatar'); AvatarEditor.init();">Min avatar</button>
             <button class="btn btn-secondary" onclick="UI.showScreen('screen-guide')">Spillguide</button>
             <button class="btn btn-secondary" id="btn-sound" onclick="SFX.init(); SFX.toggle(); UI.updateSoundButton();">🔊 Lyd p&aring;</button>
             <div class="title-footer">
@@ -239,6 +240,20 @@
         </div>
     </div>
 
+    <!-- AVATAR -->
+    <div id="screen-avatar" class="screen">
+        <div class="avatar-container">
+            <h2>Din avatar</h2>
+            <div class="avatar-preview-wrapper">
+                <canvas id="avatar-preview-canvas" width="120" height="200"></canvas>
+            </div>
+            <div class="avatar-sections" id="avatar-sections"></div>
+            <div class="avatar-actions">
+                <button class="btn btn-secondary" onclick="UI.showScreen('screen-title')">Tilbake</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SPILLGUIDE -->
     <div id="screen-guide" class="screen">
         <div class="guide-container">
@@ -400,10 +415,10 @@
                             <span>🪱 Mark</span><span class="great">80%</span><span class="bad">30%</span><span>Sm&aring;fisk i innsj&oslash;</span>
                         </div>
                         <div class="guide-table-row">
-                            <span>🔩 Sluk</span><span class="good">70%</span><span class="ok">50%</span><span>Rovfisk (gjedde, abbor)</span>
+                            <span>🥄 Sluk</span><span class="good">70%</span><span class="ok">50%</span><span>Rovfisk (gjedde, abbor)</span>
                         </div>
                         <div class="guide-table-row">
-                            <span>🪶 Flue</span><span class="great">90%</span><span class="bad">10%</span><span>Laks, &oslash;rret, harr</span>
+                            <span>🪰 Flue</span><span class="great">90%</span><span class="bad">10%</span><span>Laks, &oslash;rret, harr</span>
                         </div>
                         <div class="guide-table-row">
                             <span>🦐 Reke</span><span class="bad">20%</span><span class="great">90%</span><span>Torsk, lyr, berggylte</span>

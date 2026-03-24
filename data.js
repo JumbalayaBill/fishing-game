@@ -23,7 +23,7 @@ const LOCATIONS = [
         id: 'river',
         name: 'Lakseelva',
         description: 'En stri elv kjent for laksefiske. Fluefiskerens paradis.',
-        icon: '🌊',
+        icon: '🏞️',
         type: 'fw',
         unlocked: true,
         castCount: 10,
@@ -52,7 +52,7 @@ const LOCATIONS = [
         id: 'ocean',
         name: 'Nordsjøen',
         description: 'Det åpne havet. Store fisker lurer i dypet, men forholdene er tøffe.',
-        icon: '🌊',
+        icon: '🛢️',
         type: 'sw',
         unlocked: false,
         unlockCost: 500,
@@ -79,7 +79,7 @@ const BAITS = [
     {
         id: 'spinner',
         name: 'Sluk',
-        icon: '🔩',
+        icon: '🥄',
         description: 'Metallsluk for rovfisk. Perfekt for gjedde og stor abbor.',
         cost: 0,
         unlocked: true,
@@ -89,7 +89,7 @@ const BAITS = [
     {
         id: 'fly',
         name: 'Flue',
-        icon: '🪶',
+        icon: '🪰',
         description: 'Kunstig flue. Våpenet i elva.',
         cost: 50,
         unlocked: false,
@@ -507,10 +507,10 @@ const EQUIPMENT = {
         description: 'Bedre stang = raskere innhenting',
         stat: 'Innhentingsfart',
         tiers: [
-            { id: 'rod_1', name: 'Begynnerstang', cost: 0, reelSpeed: 1.0 },
-            { id: 'rod_2', name: 'Sportsstang', cost: 250, reelSpeed: 1.35 },
-            { id: 'rod_3', name: 'Proffstang', cost: 700, reelSpeed: 1.7 },
-            { id: 'rod_4', name: 'Mesterstang', cost: 1800, reelSpeed: 2.2 }
+            { id: 'rod_1', name: 'Begynnerstang', cost: 0, reelSpeed: 1.0, color: '#5D4E37', handleColor: '#3A2F1E', reelColor: '#888' },
+            { id: 'rod_2', name: 'Sportsstang', cost: 250, reelSpeed: 1.35, color: '#4A6FA5', handleColor: '#2D4A6F', reelColor: '#AAA' },
+            { id: 'rod_3', name: 'Proffstang', cost: 700, reelSpeed: 1.7, color: '#2E2E2E', handleColor: '#1A1A1A', reelColor: '#E04040' },
+            { id: 'rod_4', name: 'Mesterstang', cost: 1800, reelSpeed: 2.2, color: '#C9A84C', handleColor: '#8B6914', reelColor: '#FFD700' }
         ]
     },
     line: {
@@ -519,10 +519,10 @@ const EQUIPMENT = {
         description: 'Sterkere snøre = tåler mer spenning og bredere grønn sone',
         stat: 'Snørestyrke',
         tiers: [
-            { id: 'line_1', name: 'Grunnsnøre', cost: 0, snapThreshold: 0.75, greenStart: 0.20, greenEnd: 0.70 },
-            { id: 'line_2', name: 'Sportsnøre', cost: 200, snapThreshold: 0.80, greenStart: 0.17, greenEnd: 0.74 },
-            { id: 'line_3', name: 'Flettesnøre', cost: 600, snapThreshold: 0.86, greenStart: 0.13, greenEnd: 0.79 },
-            { id: 'line_4', name: 'Stålsnøre', cost: 1500, snapThreshold: 0.92, greenStart: 0.08, greenEnd: 0.85 }
+            { id: 'line_1', name: 'Grunnsnøre', cost: 0, snapThreshold: 0.75, greenStart: 0.20, greenEnd: 0.70, lineColor: 'rgba(200,200,200,0.5)', lineWidth: 1 },
+            { id: 'line_2', name: 'Sportsnøre', cost: 200, snapThreshold: 0.80, greenStart: 0.17, greenEnd: 0.74, lineColor: 'rgba(100,180,255,0.6)', lineWidth: 1 },
+            { id: 'line_3', name: 'Flettesnøre', cost: 600, snapThreshold: 0.86, greenStart: 0.13, greenEnd: 0.79, lineColor: 'rgba(50,220,100,0.65)', lineWidth: 1.5 },
+            { id: 'line_4', name: 'Stålsnøre', cost: 1500, snapThreshold: 0.92, greenStart: 0.08, greenEnd: 0.85, lineColor: 'rgba(255,215,0,0.7)', lineWidth: 1.5 }
         ]
     },
     reel: {
@@ -580,6 +580,45 @@ const CHALLENGE_TYPES = [
 ];
 
 // Standard lagring
+// Avatar customization options
+const AVATAR_OPTIONS = {
+    skinTone: [
+        { id: 'light', name: 'Lys', color: '#FDDBB4' },
+        { id: 'medium', name: 'Middels', color: '#D4A574' },
+        { id: 'tan', name: 'Brun', color: '#A67B5B' },
+        { id: 'dark', name: 'Mørk', color: '#6B4226' }
+    ],
+    hair: [
+        { id: 'none', name: 'Ingen', color: null },
+        { id: 'brown', name: 'Brun', color: '#4A3728' },
+        { id: 'blond', name: 'Blond', color: '#D4A843' },
+        { id: 'black', name: 'Svart', color: '#1A1A1A' },
+        { id: 'red', name: 'Rød', color: '#8B3A1A' },
+        { id: 'gray', name: 'Grå', color: '#9E9E9E' }
+    ],
+    hat: [
+        { id: 'none', name: 'Ingen', color: null },
+        { id: 'cap', name: 'Caps', color: '#2D5BA3' },
+        { id: 'bucket', name: 'Bøttehatt', color: '#5D6B3A' },
+        { id: 'beanie', name: 'Lue', color: '#C0392B' },
+        { id: 'cowboy', name: 'Cowboyhatt', color: '#8B6914' },
+        { id: 'gold_cap', name: 'Gullcaps', color: '#FFD700' }
+    ],
+    jacket: [
+        { id: 'tshirt', name: 'T-skjorte', color: '#3498DB' },
+        { id: 'vest', name: 'Fiskevest', color: '#5D6B3A' },
+        { id: 'hoodie', name: 'Hettegenser', color: '#7F8C8D' },
+        { id: 'raincoat', name: 'Regnjakke', color: '#F1C40F' },
+        { id: 'flannel', name: 'Flanellskjorte', color: '#C0392B' }
+    ],
+    pants: [
+        { id: 'jeans', name: 'Jeans', color: '#2C3E6B' },
+        { id: 'cargo', name: 'Cargobukse', color: '#5D6B3A' },
+        { id: 'waders', name: 'Vadere', color: '#4A6B3A' },
+        { id: 'shorts', name: 'Shorts', color: '#D4A574' }
+    ]
+};
+
 const DEFAULT_SAVE = {
     coins: 0,
     totalCoins: 0,
@@ -592,6 +631,13 @@ const DEFAULT_SAVE = {
         reel: 0,
         hook: 0,
         finder: 0
+    },
+    avatar: {
+        skinTone: 'light',
+        hair: 'brown',
+        hat: 'cap',
+        jacket: 'vest',
+        pants: 'jeans'
     },
     totalCatches: 0,
     totalPoints: 0,

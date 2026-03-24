@@ -1205,6 +1205,82 @@ body {
     color: var(--text);
 }
 
+/* ===== AVATAR EDITOR ===== */
+.avatar-container {
+    max-width: 500px;
+    width: 100%;
+    padding: 30px;
+}
+#screen-avatar.active { align-items: flex-start; padding-top: 40px; }
+
+.avatar-container h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.avatar-preview-wrapper {
+    text-align: center;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.03);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+}
+
+#avatar-preview-canvas {
+    display: block;
+    margin: 0 auto;
+    image-rendering: auto;
+}
+
+.avatar-section {
+    margin-bottom: 16px;
+}
+
+.avatar-section h3 {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.avatar-option-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.avatar-option {
+    padding: 8px 14px;
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.avatar-option:hover { border-color: #555; }
+.avatar-option.selected { border-color: var(--accent); background: rgba(255, 222, 23, 0.1); }
+
+.avatar-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.2);
+    display: inline-block;
+}
+
+.avatar-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
 /* ===== KNOT MINI-GAME ===== */
 .knot-container {
     background: var(--bg-card);
