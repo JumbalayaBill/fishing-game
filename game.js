@@ -2797,6 +2797,7 @@ const Game = {
         this.activeEvent = null;
         this.pendingCreatureEvent = null;
         this.dayEvents = [];
+        this.lineBroke = false;
         this.phase = 'idle';
 
         // Set random weather
@@ -3307,12 +3308,13 @@ const Game = {
     fishEscaped(reason) {
         this.phase = 'idle';
         this.castsLeft--;
+        this.lineBroke = reason.includes('røk') || reason.includes('glapp');
         this.updateHUD();
 
-        if (reason.includes('røk') || reason.includes('glapp')) SFX.play('lineSnap');
+        if (this.lineBroke) SFX.play('lineSnap');
         else SFX.play('sadTrombone');
 
-        document.getElementById('escape-title').textContent = 'Fisken slapp!';
+        document.getElementById('escape-title').textContent = this.lineBroke ? 'Snøret røk!' : 'Fisken slapp!';
         document.getElementById('escape-reason').textContent = reason;
         UI.showOverlay('overlay-escape');
     },
@@ -3366,6 +3368,12 @@ const Game = {
         UI.hideOverlay('overlay-escape');
         if (this.castsLeft <= 0) {
             this.endDay();
+        } else if (this.lineBroke) {
+            // Line broke — must re-tie knot before continuing
+            this.lineBroke = false;
+            this.running = false;
+            if (this.animFrame) cancelAnimationFrame(this.animFrame);
+            KnotGame.start();
         } else {
             UI.setPrompt('Trykk MELLOMROM for å kaste igjen', true);
         }
@@ -3498,7 +3506,11 @@ const Game = {
             Scene.addSplash(bobX, wl);
             SFX.play('splash');
 
-            UI.setPrompt('Venter på napp...', true);
+            UI.setPrompt('Venter på napp... (MELLOMROM for å dra inn)', true);
+        } else if (this.phase === 'waiting') {
+            // Reel in bobber without a catch
+            this.phase = 'idle';
+            UI.setPrompt('Trykk MELLOMROM for å kaste ut', true);
         } else if (this.phase === 'bite') {
             if (this.activeEvent) {
                 this.itemCaught();
